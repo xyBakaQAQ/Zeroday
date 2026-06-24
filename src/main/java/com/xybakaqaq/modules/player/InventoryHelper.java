@@ -1,4 +1,4 @@
-package com.xybakaqaq.modules.render;
+package com.xybakaqaq.modules.player;
 
 import java.util.HashSet;
 import java.util.List;
@@ -8,7 +8,6 @@ import org.lwjgl.glfw.GLFW;
 
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
-import com.xybakaqaq.modules.settings.BooleanSetting;
 import com.xybakaqaq.utils.InventoryUtils;
 
 import net.minecraft.client.Minecraft;
@@ -18,9 +17,9 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Visual inventory helper (ported from Flowing, visual mode only): tints inventory / container slots
- * green when the item is better than what you already have (or the best of its kind you own) and red
- * when it is junk. No automation — purely the highlight.
+ * Visual inventory helper (ported from Flowing, visual mode only): compares <b>only weapons and
+ * armor</b> against the best of their kind you own, tinting the slot green when it is better and red
+ * when it is worse. Everything else (tools, blocks, food, misc) is left untinted. No automation.
  */
 public final class InventoryHelper extends Module {
 
@@ -28,14 +27,12 @@ public final class InventoryHelper extends Module {
 	private static final int GARBAGE = 0x50FF0000;
 	private static final double EPS = 0.0001D;
 
-	private final BooleanSetting checkTools = new BooleanSetting("Check Tools", true);
-
 	private final Set<Integer> usefulSlots = new HashSet<>();
 	private final Set<Integer> garbageSlots = new HashSet<>();
 	private long lastUpdate;
 
 	public InventoryHelper() {
-		super("InventoryHelper", Category.RENDER, "Highlights better (green) / junk (red) inventory slots.", GLFW.GLFW_KEY_UNKNOWN);
+		super("InventoryHelper", Category.PLAYER, "Highlights better (green) / worse (red) weapon & armor slots.", GLFW.GLFW_KEY_UNKNOWN);
 	}
 
 	/** @return the highlight ARGB for the slot, or 0. Called from the container-screen mixin per slot. */
@@ -76,10 +73,6 @@ public final class InventoryHelper extends Module {
 			if (stack.isEmpty()) {
 				continue;
 			}
-			String category = InventoryUtils.getHelperItemCategory(stack);
-			if (!checkTools.isEnabled() && InventoryUtils.isMiningToolCategory(category)) {
-				continue;
-			}
 			ItemLevel level = getItemLevel(player, stack, slot);
 			if (level == ItemLevel.BETTER) {
 				usefulSlots.add(slot.index);
@@ -91,10 +84,8 @@ public final class InventoryHelper extends Module {
 
 	private ItemLevel getItemLevel(Player player, ItemStack stack, Slot slot) {
 		String category = InventoryUtils.getHelperItemCategory(stack);
-		if (category.equals("other") && !InventoryUtils.isCleanerWhitelisted(stack.getItem())) {
-			return ItemLevel.GARBAGE;
-		}
-		if (!category.startsWith("tool_") && !category.startsWith("weapon_") && !category.startsWith("armor_")) {
+		// only weapons and armor are compared — everything else is left untinted
+		if (!category.startsWith("weapon_") && !category.startsWith("armor_")) {
 			return ItemLevel.NORMAL;
 		}
 		double currentScore = InventoryUtils.calculateScore(player, stack);

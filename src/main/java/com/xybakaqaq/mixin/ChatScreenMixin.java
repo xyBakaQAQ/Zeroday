@@ -2,9 +2,11 @@ package com.xybakaqaq.mixin;
 
 import com.xybakaqaq.command.CommandManager;
 import com.xybakaqaq.gui.cloudmusic.CloudMusicWidget;
+import com.xybakaqaq.gui.keystrokes.KeystrokesWidget;
 import com.xybakaqaq.gui.targethud.TargetHudWidget;
 import com.xybakaqaq.modules.ModuleManager;
 import com.xybakaqaq.modules.render.CloudMusic;
+import com.xybakaqaq.modules.render.Keystrokes;
 import com.xybakaqaq.modules.render.TargetHUD;
 
 import net.minecraft.client.gui.screens.ChatScreen;
@@ -42,6 +44,12 @@ public class ChatScreenMixin {
 		TargetHUD targetHud = ModuleManager.get(TargetHUD.class);
 		if (targetHud != null && targetHud.isEnabled()
 				&& TargetHudWidget.mouseClicked(event.x(), event.y(), event.button())) {
+			cir.setReturnValue(true);
+			return;
+		}
+		Keystrokes keystrokes = ModuleManager.get(Keystrokes.class);
+		if (keystrokes != null && keystrokes.isEnabled()
+				&& KeystrokesWidget.mouseClicked(event.x(), event.y(), event.button())) {
 			cir.setReturnValue(true);
 		}
 	}

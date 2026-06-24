@@ -5,6 +5,7 @@ import org.lwjgl.glfw.GLFW;
 import com.xybakaqaq.config.WindowConfig;
 import com.xybakaqaq.modules.ModuleManager;
 import com.xybakaqaq.modules.render.TargetHUD;
+import com.xybakaqaq.utils.CombatTarget;
 import com.xybakaqaq.utils.Skia;
 import com.xybakaqaq.utils.SkijaBridge;
 
@@ -20,15 +21,25 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+
 /**
- * The Skija-rendered target HUD widget: head (for players) + name + an animated health bar. The
- * target is the most recently attacked living entity, kept while it is alive and within the module's
- * distance; with no target, your own info is shown while the chat bar is open. Rendered at the
- * physical framebuffer resolution (crisp). Draggable like the CloudMusic widget.
+ * The Skija-rendered target HUD widget: head (players) + name + an animated health bar. The target is
+ * the entity you are looking at (crosshair) or most recently attacked — both feed it — kept while alive
+ * and within the module's distance; with no target, your own info is shown while the chat bar is open.
+ *
+ * <p>Animated: smooth health bar; a <b>hurt punch</b> when the target loses health (the head shrinks
+ * and flashes red, the panel flashes); and a <b>fade-up</b> on appear / disappear (using cached data so
+ * it can keep fading even after the target is gone). Rendered at the physical framebuffer resolution.
  */
 public final class TargetHudWidget {
 
@@ -43,10 +54,24 @@ public final class TargetHudWidget {
 	private static double dragOffX;
 	private static double dragOffY;
 
-	private static LivingEntity lastTarget;
-	private static LivingEntity animTarget;
-	private static float healthDisplay = -1f;
+	private static LivingEntity displayTarget;
 	private static long lastNanos;
+
+	// animation state
+	private static float appear;
+	private static float hurt;
+	private static float healthDisplay = -1f;
+	private static float ghostDisplay;
+	private static float prevHealth;
+	private static float slideIn;
+	private static float clock;
+
+	// cached display data (so the fade-out keeps working after the entity is gone)
+	private static String cachedName = "";
+	private static String cachedHpText = "";
+	private static float cachedFrac;
+	private static boolean cachedHasHead;
+	private static Identifier cachedSkin;
 
 	private static final SkijaBridge bridge = new SkijaBridge("targethud");
 
@@ -55,9 +80,7 @@ public final class TargetHudWidget {
 
 	/** Called from the attack mixin: remembers the entity the player just hit. */
 	public static void onAttack(Entity entity) {
-		if (entity instanceof LivingEntity living) {
-			lastTarget = living;
-		}
+		CombatTarget.onAttack(entity);
 	}
 
 	public static void render(GuiGraphicsExtractor graphics, boolean chatOpen) {
@@ -72,28 +95,75 @@ public final class TargetHudWidget {
 			updateDrag();
 		}
 
-		LivingEntity target = resolveTarget(chatOpen);
-		if (target == null) {
-			return;
-		}
-
 		long now = System.nanoTime();
 		float dt = lastNanos == 0 ? 0f : Math.min(0.1f, (now - lastNanos) / 1.0e9f);
 		lastNanos = now;
-		float frac = Math.max(0f, Math.min(1f, target.getHealth() / Math.max(1f, target.getMaxHealth())));
-		if (target != animTarget || healthDisplay < 0f) {
-			healthDisplay = frac;
-			animTarget = target;
-		} else {
-			healthDisplay += (frac - healthDisplay) * Math.min(1f, dt * 8f);
+
+		LivingEntity target = resolveTarget(chatOpen);
+		boolean present = target != null;
+		if (present) {
+			if (target != displayTarget) {
+				displayTarget = target;
+				prevHealth = target.getHealth();
+				hurt = 0f;
+				healthDisplay = -1f;
+				slideIn = 1f;
+			}
+			capture(target);
+		} else if (displayTarget == null) {
+			return;
 		}
 
-		boolean hasHead = target instanceof AbstractClientPlayer;
-		int w = hasHead ? 180 : 150;
-		int contentX = hasHead ? 12 + HEAD + 6 : 12;
+		appear += ((present ? 1f : 0f) - appear) * Math.min(1f, dt * 10f);
+		hurt += (0f - hurt) * Math.min(1f, dt * 6f);
+		slideIn += (0f - slideIn) * Math.min(1f, dt * 12f);
+		clock += dt;
+		if (!present && appear < 0.02f) {
+			displayTarget = null;
+			return;
+		}
+		if (healthDisplay < 0f) {
+			healthDisplay = cachedFrac;
+			ghostDisplay = cachedFrac;
+		} else {
+			healthDisplay += (cachedFrac - healthDisplay) * Math.min(1f, dt * 14f);
+			if (cachedFrac > ghostDisplay) {
+				ghostDisplay = cachedFrac;
+			} else {
+				ghostDisplay += (healthDisplay - ghostDisplay) * Math.min(1f, dt * 3f);
+			}
+		}
+
+		drawWidget(graphics);
+	}
+
+	private static void capture(LivingEntity target) {
+		cachedName = target.getName().getString();
+		float hp = target.getHealth();
+		float max = Math.max(1f, target.getMaxHealth());
+		if (hp < prevHealth - 0.01f) {
+			hurt = 1f;
+		}
+		prevHealth = hp;
+		cachedFrac = Math.max(0f, Math.min(1f, hp / max));
+		cachedHpText = (int) Math.ceil(hp) + " / " + (int) Math.ceil(max);
+		cachedHasHead = target instanceof AbstractClientPlayer;
+		cachedSkin = cachedHasHead ? ((AbstractClientPlayer) target).getSkin().body().texturePath() : null;
+	}
+
+	private static void drawWidget(GuiGraphicsExtractor graphics) {
+		int w = 180;
+		int contentX = 12 + HEAD + 6;
 		float hd = healthDisplay;
-		String name = target.getName().getString();
-		String hpText = (int) Math.ceil(target.getHealth()) + " / " + (int) Math.ceil(target.getMaxHealth());
+		float ghost = ghostDisplay;
+		float frac = cachedFrac;
+		float flash = Math.max(0f, Math.min(1f, hurt));
+		String name = cachedName;
+		String hpText = cachedHpText;
+
+		int drawX = x - Math.round(slideIn * 18f);
+		int drawY = y - Math.round((1f - appear) * 6f);
+		int alpha = Math.round(Math.max(0f, Math.min(1f, appear)) * 255f);
 
 		Window win = Minecraft.getInstance().getWindow();
 		float scale = win.getGuiScaledWidth() > 0 ? (float) win.getWidth() / win.getGuiScaledWidth() : 1f;
@@ -102,37 +172,71 @@ public final class TargetHudWidget {
 		try {
 			bridge.render(sw, sh, canvas -> {
 				canvas.scale(scale, scale);
-				draw(canvas, w, contentX, name, hpText, hd, frac);
+				draw(canvas, w, contentX, name, hpText, hd, ghost, frac, flash);
 			});
-			graphics.blit(RenderPipelines.GUI_TEXTURED, bridge.textureId(), x, y, 0.0F, 0.0F, w, H, sw, sh, sw, sh);
+			graphics.blit(RenderPipelines.GUI_TEXTURED, bridge.textureId(), drawX, drawY, 0.0F, 0.0F,
+					w, H, sw, sh, sw, sh, (alpha << 24) | 0xFFFFFF);
 		} catch (Throwable ignored) {
 			return;
 		}
 
-		// Player head (drawn with MC on top of the Skija panel).
-		if (hasHead) {
-			Identifier skin = ((AbstractClientPlayer) target).getSkin().body().texturePath();
-			int hx = x + 12;
-			int hy = y + (H - HEAD) / 2;
-			graphics.blit(RenderPipelines.GUI_TEXTURED, skin, hx, hy, 8.0F, 8.0F, HEAD, HEAD, 8, 8, 64, 64);
-			graphics.blit(RenderPipelines.GUI_TEXTURED, skin, hx, hy, 40.0F, 8.0F, HEAD, HEAD, 8, 8, 64, 64);
+		int shakeX = Math.round((float) Math.sin(clock * 45f) * flash * 2.5f);
+		int shakeY = Math.round((float) Math.sin(clock * 53f) * flash * 1.6f);
+		int boxX = drawX + 12 + shakeX;
+		int boxY = drawY + (H - HEAD) / 2 + shakeY;
+		float shrink = 1f - flash * 0.22f;
+
+		if (cachedHasHead && cachedSkin != null) {
+			int hs = Math.round(HEAD * shrink);
+			int fhx = boxX + (HEAD - hs) / 2;
+			int fhy = boxY + (HEAD - hs) / 2;
+			int tint = (alpha << 24) | (lerp(0xFFFFFFFF, 0xFFFF5A5A, flash) & 0xFFFFFF);
+			graphics.blit(RenderPipelines.GUI_TEXTURED, cachedSkin, fhx, fhy, 8.0F, 8.0F, hs, hs, 8, 8, 64, 64, tint);
+			graphics.blit(RenderPipelines.GUI_TEXTURED, cachedSkin, fhx, fhy, 40.0F, 8.0F, hs, hs, 8, 8, 64, 64, tint);
+		} else {
+			LivingEntity entity = displayTarget;
+			if (entity != null && entity.isAlive() && !entity.isRemoved() && appear > 0.35f) {
+				renderEntityHead(graphics, entity, boxX, boxY, shrink);
+				if (flash > 0.01f) {
+					graphics.fill(boxX, boxY, boxX + HEAD, boxY + HEAD, (Math.round(flash * 110f) << 24) | 0xFF3838);
+				}
+			}
 		}
+	}
+
+	private static void renderEntityHead(GuiGraphicsExtractor graphics, LivingEntity entity, int boxX, int boxY, float shrink) {
+		EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+		EntityRenderer<? super LivingEntity, ?> renderer = dispatcher.getRenderer(entity);
+		EntityRenderState renderState = renderer.createRenderState(entity, 1.0F);
+		renderState.outlineColor = 0;
+		renderState.shadowPieces.clear();
+		float boxHeight;
+		if (renderState instanceof LivingEntityRenderState living) {
+			living.bodyRot = 180.0F;
+			living.yRot = 0.0F;
+			living.xRot = 0.0F;
+			living.boundingBoxWidth = living.boundingBoxWidth / living.scale;
+			living.boundingBoxHeight = living.boundingBoxHeight / living.scale;
+			living.scale = 1.0F;
+			boxHeight = living.boundingBoxHeight;
+		} else {
+			boxHeight = renderState.boundingBoxHeight;
+		}
+		float size = HEAD * 0.82f / Math.max(0.6f, boxHeight) * shrink;
+		Quaternionf rotation = new Quaternionf().rotateZ((float) Math.PI);
+		Vector3f translation = new Vector3f(0.0F, boxHeight / 2.0F, 0.0F);
+		graphics.entity(renderState, size, translation, rotation, null, boxX, boxY, boxX + HEAD, boxY + HEAD);
 	}
 
 	/** Begins a drag if the left button presses inside the widget. */
 	public static boolean mouseClicked(double mx, double my, int button) {
-		int w = lastWidth();
-		if (button == 0 && mx >= x && mx < x + w && my >= y && my < y + H) {
+		if (button == 0 && mx >= x && mx < x + 180 && my >= y && my < y + H) {
 			dragging = true;
 			dragOffX = mx - x;
 			dragOffY = my - y;
 			return true;
 		}
 		return false;
-	}
-
-	private static int lastWidth() {
-		return 180; // generous hit area (max panel width)
 	}
 
 	private static LivingEntity resolveTarget(boolean chatOpen) {
@@ -142,11 +246,10 @@ public final class TargetHudWidget {
 		}
 		TargetHUD module = ModuleManager.get(TargetHUD.class);
 		double maxBlocks = module != null ? module.distance() : 6.0;
-		if (lastTarget != null && lastTarget.isAlive() && !lastTarget.isRemoved()
-				&& mc.player.distanceTo(lastTarget) <= maxBlocks) {
-			return lastTarget;
+		LivingEntity target = CombatTarget.resolve(maxBlocks);
+		if (target != null) {
+			return target;
 		}
-		lastTarget = null;
 		return chatOpen ? mc.player : null;
 	}
 
@@ -164,7 +267,7 @@ public final class TargetHudWidget {
 		y = clamp((int) Math.round(my - dragOffY), 0, win.getGuiScaledHeight() - H);
 	}
 
-	private static void draw(Canvas canvas, int w, int contentX, String name, String hpText, float healthFrac, float realFrac) {
+	private static void draw(Canvas canvas, int w, int contentX, String name, String hpText, float healthFrac, float ghostFrac, float realFrac, float flash) {
 		try (Paint bg = new Paint()) {
 			bg.setShader(Shader.makeLinearGradient(0, 0, 0, H, new int[] {0xE01D1D24, 0xE013131A}));
 			canvas.drawRRect(RRect.makeXYWH(0, 0, w, H, 8), bg);
@@ -183,6 +286,11 @@ public final class TargetHudWidget {
 		try (Paint paint = new Paint()) {
 			paint.setColor(0x55000000);
 			canvas.drawRRect(RRect.makeXYWH(barX, barY, barW, barH, 3), paint);
+			// damage ghost — white residue trailing the lost health
+			if (ghostFrac > healthFrac + 0.001f) {
+				paint.setColor(0xAAFFFFFF);
+				canvas.drawRRect(RRect.makeXYWH(barX, barY, Math.max(3f, barW * ghostFrac), barH, 3), paint);
+			}
 			paint.setColor(lerp(0xFFE53935, 0xFF6FBF59, realFrac));
 			canvas.drawRRect(RRect.makeXYWH(barX, barY, Math.max(3f, barW * healthFrac), barH, 3), paint);
 		}
@@ -191,6 +299,13 @@ public final class TargetHudWidget {
 			paint.setAntiAlias(true);
 			paint.setColor(0xFF9A9AA2);
 			canvas.drawString(hpText, barX, barY + barH + 11, small, paint);
+		}
+
+		if (flash > 0.01f) {
+			try (Paint red = new Paint()) {
+				red.setColor((Math.round(flash * 70f) << 24) | 0xFF3838);
+				canvas.drawRRect(RRect.makeXYWH(0, 0, w, H, 8), red);
+			}
 		}
 	}
 

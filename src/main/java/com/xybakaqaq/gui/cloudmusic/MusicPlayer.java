@@ -32,8 +32,15 @@ public final class MusicPlayer {
 	private static volatile Thread current;
 	private static volatile boolean paused;
 	private static volatile long positionMs;
+	private static volatile String currentUrl;
+	private static volatile Runnable onEnd;
 
 	private MusicPlayer() {
+	}
+
+	/** Registers a callback fired when a track finishes naturally (not on stop / replace / seek). */
+	public static void setOnEnd(Runnable callback) {
+		onEnd = callback;
 	}
 
 	/** @return current playback position in milliseconds. */
@@ -57,10 +64,23 @@ public final class MusicPlayer {
 	}
 
 	public static synchronized void play(String url) {
+		currentUrl = url;
+		restart(url, 0);
+	}
+
+	/** Jumps to {@code ms} by re-streaming the current track and fast-forwarding the decoder. */
+	public static synchronized void seek(long ms) {
+		String url = currentUrl;
+		if (url != null) {
+			restart(url, Math.max(0, ms));
+		}
+	}
+
+	private static synchronized void restart(String url, long startMs) {
 		stop();
 		paused = false;
-		positionMs = 0;
-		Thread t = new Thread(() -> stream(url), "cloudmusic-audio");
+		positionMs = startMs;
+		Thread t = new Thread(() -> stream(url, startMs), "cloudmusic-audio");
 		t.setDaemon(true);
 		current = t;
 		t.start();
@@ -82,7 +102,7 @@ public final class MusicPlayer {
 		}
 	}
 
-	private static void stream(String url) {
+	private static void stream(String url, long startMs) {
 		Thread self = Thread.currentThread();
 		SourceDataLine line = null;
 		try {
@@ -115,8 +135,14 @@ public final class MusicPlayer {
 				short[] samples = output.getBuffer();
 				int len = output.getBufferLength();
 				playedFrames += len / Math.max(1, channels);
+				long playedMs = playedFrames * 1000L / Math.max(1, rate);
+				// fast-forward: decode (to advance the stream) but don't play until we reach startMs
+				if (playedMs < startMs) {
+					bitstream.closeFrame();
+					continue;
+				}
 				if (current == self) {
-					positionMs = playedFrames * 1000L / Math.max(1, rate);
+					positionMs = playedMs;
 				}
 				byte[] bytes = new byte[len * 2];
 				for (int i = 0; i < len; i++) {
@@ -139,6 +165,10 @@ public final class MusicPlayer {
 			// Release ownership if we finished naturally (and weren't already replaced by a new track).
 			if (current == self) {
 				current = null;
+				Runnable cb = onEnd;
+				if (cb != null) {
+					cb.run();
+				}
 			}
 		}
 	}

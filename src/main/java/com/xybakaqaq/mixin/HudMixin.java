@@ -2,10 +2,13 @@ package com.xybakaqaq.mixin;
 
 import com.xybakaqaq.gui.cloudmusic.CloudMusicWidget;
 import com.xybakaqaq.gui.hotbar.HotbarManager;
+import com.xybakaqaq.gui.keystrokes.KeystrokesWidget;
 import com.xybakaqaq.gui.targethud.TargetHudWidget;
 import com.xybakaqaq.modules.ModuleManager;
 import com.xybakaqaq.modules.render.CloudMusic;
+import com.xybakaqaq.modules.render.Crosshair;
 import com.xybakaqaq.modules.render.HUD;
+import com.xybakaqaq.modules.render.Keystrokes;
 import com.xybakaqaq.modules.render.TargetHUD;
 import com.xybakaqaq.utils.HudLayout;
 
@@ -48,6 +51,16 @@ public class HudMixin {
 		}
 	}
 
+	@Inject(method = "extractCrosshair", at = @At("HEAD"), cancellable = true)
+	private void zeroday$onExtractCrosshair(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+		Crosshair crosshair = ModuleManager.get(Crosshair.class);
+		if (crosshair != null && crosshair.isEnabled()
+				&& Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
+			Crosshair.render(graphics);
+			ci.cancel();
+		}
+	}
+
 	@Inject(method = "extractSelectedItemName", at = @At("HEAD"), cancellable = true)
 	private void zeroday$onExtractSelectedItemName(GuiGraphicsExtractor graphics, CallbackInfo ci) {
 		if (HotbarManager.onExtractSelectedItemName(graphics, this.lastToolHighlight, this.toolHighlightTimer)) {
@@ -70,6 +83,10 @@ public class HudMixin {
 		TargetHUD targetHud = ModuleManager.get(TargetHUD.class);
 		if (targetHud != null && targetHud.isEnabled()) {
 			TargetHudWidget.render(graphics, chatOpen);
+		}
+		Keystrokes keystrokes = ModuleManager.get(Keystrokes.class);
+		if (keystrokes != null && keystrokes.isEnabled()) {
+			KeystrokesWidget.render(graphics, chatOpen);
 		}
 	}
 

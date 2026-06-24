@@ -1,7 +1,7 @@
 package com.xybakaqaq.mixin;
 
 import com.xybakaqaq.modules.ModuleManager;
-import com.xybakaqaq.modules.render.InventoryHelper;
+import com.xybakaqaq.modules.player.InventoryHelper;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;

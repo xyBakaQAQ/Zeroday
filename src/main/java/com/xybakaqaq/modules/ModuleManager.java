@@ -8,10 +8,14 @@ import com.xybakaqaq.Zeroday;
 import com.xybakaqaq.modules.movement.Sprint;
 import com.xybakaqaq.modules.render.Animation;
 import com.xybakaqaq.modules.client.ClickGui;
+import com.xybakaqaq.modules.client.Target;
 import com.xybakaqaq.modules.render.CloudMusic;
+import com.xybakaqaq.modules.render.Crosshair;
+import com.xybakaqaq.modules.render.Environment;
 import com.xybakaqaq.modules.render.FullBright;
 import com.xybakaqaq.modules.render.HUD;
-import com.xybakaqaq.modules.render.InventoryHelper;
+import com.xybakaqaq.modules.player.InventoryHelper;
+import com.xybakaqaq.modules.render.Keystrokes;
 import com.xybakaqaq.modules.render.TargetHUD;
 
 /**
@@ -52,6 +56,10 @@ public final class ModuleManager {
 		register(new Animation());
 		register(new TargetHUD());
 		register(new InventoryHelper());
+		register(new Target());
+		register(new Crosshair());
+		register(new Environment());
+		register(new Keystrokes());
 		Zeroday.LOGGER.info("ModuleManager initialized ({} modules)", MODULES.size());
 	}
 

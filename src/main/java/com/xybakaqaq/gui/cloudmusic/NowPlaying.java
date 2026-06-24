@@ -37,6 +37,13 @@ public final class NowPlaying {
 	public static volatile boolean hasCover;
 	public static volatile long durationMs;
 
+	/** Play mode: 0 = sequential, 1 = loop-one, 2 = shuffle. */
+	private static volatile int mode;
+
+	static {
+		MusicPlayer.setOnEnd(NowPlaying::advance);
+	}
+
 	private record Line(long time, String text) {
 	}
 
@@ -114,6 +121,51 @@ public final class NowPlaying {
 				title = "播放失败";
 			}
 		});
+	}
+
+	public static int mode() {
+		return mode;
+	}
+
+	/** Cycles play mode: 顺序 → 单曲循环 → 随机. */
+	public static void cycleMode() {
+		mode = (mode + 1) % 3;
+	}
+
+	public static String modeName() {
+		return mode == 1 ? "单曲循环" : mode == 2 ? "随机播放" : "顺序播放";
+	}
+
+	public static synchronized List<String> queueTitles() {
+		return new ArrayList<>(titles);
+	}
+
+	public static synchronized List<String> queueArtists() {
+		return new ArrayList<>(artists);
+	}
+
+	public static synchronized int queueIndex() {
+		return index;
+	}
+
+	public static synchronized int queueSize() {
+		return ids.size();
+	}
+
+	/** Advances when a track ends, honouring the play {@link #mode}. */
+	private static synchronized void advance() {
+		if (ids.isEmpty()) {
+			return;
+		}
+		switch (mode) {
+			case 1 -> playIndex(index);
+			case 2 -> playIndex((int) (Math.random() * ids.size()));
+			default -> {
+				if (index + 1 < ids.size()) {
+					playIndex(index + 1);
+				}
+			}
+		}
 	}
 
 	public static synchronized void next() {

@@ -19,6 +19,7 @@ import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
 import com.xybakaqaq.modules.ModuleManager;
 import com.xybakaqaq.modules.settings.BooleanSetting;
+import com.xybakaqaq.modules.settings.ColorSetting;
 import com.xybakaqaq.modules.settings.ModeSetting;
 import com.xybakaqaq.modules.settings.NumberSetting;
 import com.xybakaqaq.modules.settings.Setting;
@@ -29,7 +30,9 @@ import io.github.humbleui.skija.Font;
 import io.github.humbleui.skija.FontMetrics;
 import io.github.humbleui.skija.Paint;
 import io.github.humbleui.skija.PaintMode;
+import io.github.humbleui.skija.Shader;
 import io.github.humbleui.types.RRect;
+import io.github.humbleui.types.Rect;
 
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -61,12 +64,14 @@ public class ClickGuiScreen extends UiScreen {
 	private final Map<Category, Component> headers = new EnumMap<>(Category.class);
 	private final Set<Module> expanded = new HashSet<>();
 	private final Set<ModeSetting> openModes = new HashSet<>();
+	private final Set<ColorSetting> openColors = new HashSet<>();
 
 	private Category dragCat;
 	private double dragOffX;
 	private double dragOffY;
 	private Module binding;
 	private NumberRow activeSlider;
+	private ColorPickerRow activeColor;
 
 	public ClickGuiScreen() {
 		super("clickgui", net.minecraft.network.chat.Component.literal("ClickGUI"));
@@ -125,6 +130,9 @@ public class ClickGuiScreen extends UiScreen {
 				panel.add(new ModuleRow(module));
 				if (expanded.contains(module)) {
 					for (Setting<?> setting : module.getSettings()) {
+						if (!setting.isVisible()) {
+							continue;
+						}
 						if (setting instanceof ModeSetting modeSetting) {
 							panel.add(new ModeHeaderRow(modeSetting));
 							if (openModes.contains(modeSetting)) {
@@ -134,6 +142,11 @@ public class ClickGuiScreen extends UiScreen {
 							}
 						} else if (setting instanceof NumberSetting numberSetting) {
 							panel.add(new NumberRow(numberSetting));
+						} else if (setting instanceof ColorSetting colorSetting) {
+							panel.add(new ColorRow(colorSetting));
+							if (openColors.contains(colorSetting)) {
+								panel.add(new ColorPickerRow(colorSetting));
+							}
 						} else if (setting instanceof BooleanSetting booleanSetting) {
 							panel.add(new SettingRow(booleanSetting));
 						}
@@ -178,6 +191,10 @@ public class ClickGuiScreen extends UiScreen {
 			activeSlider.applyAt(event.x());
 			return true;
 		}
+		if (activeColor != null) {
+			activeColor.applyAt(event.x(), event.y());
+			return true;
+		}
 		if (dragCat != null) {
 			float nx = (float) (event.x() - dragOffX);
 			float ny = (float) (event.y() - dragOffY);
@@ -193,6 +210,10 @@ public class ClickGuiScreen extends UiScreen {
 	public boolean mouseReleased(MouseButtonEvent event) {
 		if (activeSlider != null) {
 			activeSlider = null;
+			return true;
+		}
+		if (activeColor != null) {
+			activeColor = null;
 			return true;
 		}
 		if (dragCat != null) {
@@ -289,7 +310,7 @@ public class ClickGuiScreen extends UiScreen {
 				paint.setColor(alpha(0x18FFFFFF, hover.value()));
 				canvas.drawRRect(RRect.makeXYWH(x, y, w, h, 0), paint);
 			}
-			drawText(canvas, bodyFont, paint, setting.getName(), x + 14, y, h, SUBTEXT);
+			drawText(canvas, bodyFont, paint, setting.getName(), x + (setting.isChild() ? 24 : 14), y, h, SUBTEXT);
 			drawTextRight(canvas, bodyFont, paint, setting.isEnabled() ? "ON" : "OFF", x + w - 8, y, h,
 					setting.isEnabled() ? ACCENT : SUBTEXT);
 		}
@@ -297,6 +318,7 @@ public class ClickGuiScreen extends UiScreen {
 		@Override
 		protected boolean onClick(double mx, double my, int button) {
 			setting.toggle();
+			rebuild();
 			return true;
 		}
 	}
@@ -386,7 +408,7 @@ public class ClickGuiScreen extends UiScreen {
 
 		NumberRow(NumberSetting setting) {
 			this.setting = setting;
-			height(ROW_H);
+			height(ROW_H + 4);
 		}
 
 		@Override
@@ -402,12 +424,14 @@ public class ClickGuiScreen extends UiScreen {
 				paint.setColor(alpha(0x18FFFFFF, hover.value()));
 				canvas.drawRRect(RRect.makeXYWH(x, y, w, h, 0), paint);
 			}
-			drawText(canvas, bodyFont, paint, setting.getName(), x + 14, y, h, SUBTEXT);
-			drawTextRight(canvas, bodyFont, paint, String.format(Locale.ROOT, "%.2f", setting.getValue()), x + w - 8, y, h, ACCENT);
+			// text sits in the upper part of the row; the slider track gets the bottom strip
+			float textH = h - 6;
+			drawText(canvas, bodyFont, paint, setting.getName(), x + (setting.isChild() ? 24 : 14), y, textH, SUBTEXT);
+			drawTextRight(canvas, bodyFont, paint, String.format(Locale.ROOT, "%.2f", setting.getValue()), x + w - 8, y, textH, ACCENT);
 
 			float tx = x + 8;
 			float tw = w - 16;
-			float ty = y + h - 3;
+			float ty = y + h - 4;
 			double range = setting.getMax() - setting.getMin();
 			float frac = range == 0 ? 0f : (float) ((setting.getValue() - setting.getMin()) / range);
 			frac = Math.max(0f, Math.min(1f, frac));
@@ -430,6 +454,136 @@ public class ClickGuiScreen extends UiScreen {
 			double frac = tw == 0 ? 0 : (mx - tx) / tw;
 			frac = Math.max(0.0, Math.min(1.0, frac));
 			setting.setNumber(setting.getMin() + frac * (setting.getMax() - setting.getMin()));
+		}
+	}
+
+	/** A color setting: name + a swatch on the right; click toggles the picker below it. */
+	private final class ColorRow extends Component {
+		private final ColorSetting setting;
+		private final Anim hover = new Anim(0);
+
+		ColorRow(ColorSetting setting) {
+			this.setting = setting;
+			height(ROW_H);
+		}
+
+		@Override
+		protected void onUpdate(float dt, double mx, double my) {
+			hover.set(contains(mx, my) ? 1f : 0f);
+			hover.update(dt);
+		}
+
+		@Override
+		protected void drawSelf(Canvas canvas, Paint paint) {
+			paint.setMode(PaintMode.FILL);
+			if (hover.value() > 0.01f) {
+				paint.setColor(alpha(0x18FFFFFF, hover.value()));
+				canvas.drawRRect(RRect.makeXYWH(x, y, w, h, 0), paint);
+			}
+			drawText(canvas, bodyFont, paint, setting.getName(), x + (setting.isChild() ? 24 : 14), y, h, SUBTEXT);
+			float sw = 16;
+			float sh = 9;
+			float sxp = x + w - 8 - sw;
+			float syp = y + (h - sh) / 2f;
+			paint.setColor(0xFF101014);
+			canvas.drawRRect(RRect.makeXYWH(sxp - 1, syp - 1, sw + 2, sh + 2, 2), paint);
+			paint.setColor(0xFF000000 | (setting.getColor() & 0xFFFFFF));
+			canvas.drawRRect(RRect.makeXYWH(sxp, syp, sw, sh, 2), paint);
+		}
+
+		@Override
+		protected boolean onClick(double mx, double my, int button) {
+			if (!openColors.remove(setting)) {
+				openColors.add(setting);
+			}
+			rebuild();
+			return true;
+		}
+	}
+
+	/** The expanded color picker: a saturation/value square + a hue strip, both drag-to-pick. */
+	private final class ColorPickerRow extends Component {
+		private final ColorSetting setting;
+		private boolean dragHue;
+
+		ColorPickerRow(ColorSetting setting) {
+			this.setting = setting;
+			height(72);
+		}
+
+		@Override
+		protected void onUpdate(float dt, double mx, double my) {
+		}
+
+		private float[] geom() {
+			float sx = x + 8;
+			float sy = y + 4;
+			float sqw = w - 16;
+			float sqh = 46;
+			float hx = x + 8;
+			float hy = sy + sqh + 6;
+			float hw = w - 16;
+			float hh = 9;
+			return new float[] {sx, sy, sqw, sqh, hx, hy, hw, hh};
+		}
+
+		@Override
+		protected void drawSelf(Canvas canvas, Paint paint) {
+			float[] g = geom();
+			float sx = g[0];
+			float sy = g[1];
+			float sqw = g[2];
+			float sqh = g[3];
+			float hx = g[4];
+			float hy = g[5];
+			float hw = g[6];
+			float hh = g[7];
+			float[] hsv = rgbToHsv(setting.getColor());
+			int hueColor = 0xFF000000 | hsvToRgb(hsv[0], 1f, 1f);
+
+			paint.setMode(PaintMode.FILL);
+			try (Shader base = Shader.makeLinearGradient(sx, sy, sx + sqw, sy, new int[] {0xFFFFFFFF, hueColor})) {
+				paint.setShader(base);
+				canvas.drawRect(Rect.makeXYWH(sx, sy, sqw, sqh), paint);
+			}
+			try (Shader shade = Shader.makeLinearGradient(sx, sy, sx, sy + sqh, new int[] {0x00000000, 0xFF000000})) {
+				paint.setShader(shade);
+				canvas.drawRect(Rect.makeXYWH(sx, sy, sqw, sqh), paint);
+			}
+			try (Shader hue = Shader.makeLinearGradient(hx, hy, hx + hw, hy, new int[] {
+					0xFFFF0000, 0xFFFFFF00, 0xFF00FF00, 0xFF00FFFF, 0xFF0000FF, 0xFFFF00FF, 0xFFFF0000})) {
+				paint.setShader(hue);
+				canvas.drawRRect(RRect.makeXYWH(hx, hy, hw, hh, 2), paint);
+			}
+			paint.setShader(null);
+
+			paint.setMode(PaintMode.STROKE);
+			paint.setStrokeWidth(1.4f);
+			paint.setColor(0xFFFFFFFF);
+			canvas.drawCircle(sx + hsv[1] * sqw, sy + (1f - hsv[2]) * sqh, 2.5f, paint);
+			canvas.drawRect(Rect.makeXYWH(hx + hsv[0] * hw - 1, hy - 1, 2, hh + 2), paint);
+			paint.setMode(PaintMode.FILL);
+			paint.setStrokeWidth(1f);
+		}
+
+		@Override
+		protected boolean onClick(double mx, double my, int button) {
+			dragHue = my >= geom()[5] - 2;
+			activeColor = this;
+			applyAt(mx, my);
+			return true;
+		}
+
+		void applyAt(double mx, double my) {
+			float[] g = geom();
+			float[] hsv = rgbToHsv(setting.getColor());
+			if (dragHue) {
+				hsv[0] = clamp01((float) ((mx - g[4]) / g[6]));
+			} else {
+				hsv[1] = clamp01((float) ((mx - g[0]) / g[2]));
+				hsv[2] = 1f - clamp01((float) ((my - g[1]) / g[3]));
+			}
+			setting.setColor(0xFF000000 | hsvToRgb(hsv[0], hsv[1], hsv[2]));
 		}
 	}
 
@@ -499,6 +653,57 @@ public class ClickGuiScreen extends UiScreen {
 		int f = (from >>> shift) & 0xFF;
 		int tt = (to >>> shift) & 0xFF;
 		return Math.round(f + (tt - f) * t);
+	}
+
+	private static float clamp01(float v) {
+		return Math.max(0f, Math.min(1f, v));
+	}
+
+	/** HSV (each 0..1) to packed RGB (0xRRGGBB). */
+	private static int hsvToRgb(float h, float s, float v) {
+		h = (h % 1f + 1f) % 1f;
+		int i = (int) (h * 6f) % 6;
+		float f = h * 6f - (int) (h * 6f);
+		float p = v * (1f - s);
+		float q = v * (1f - f * s);
+		float t = v * (1f - (1f - f) * s);
+		float r;
+		float g;
+		float b;
+		switch (i) {
+			case 0 -> { r = v; g = t; b = p; }
+			case 1 -> { r = q; g = v; b = p; }
+			case 2 -> { r = p; g = v; b = t; }
+			case 3 -> { r = p; g = q; b = v; }
+			case 4 -> { r = t; g = p; b = v; }
+			default -> { r = v; g = p; b = q; }
+		}
+		return (Math.round(r * 255f) << 16) | (Math.round(g * 255f) << 8) | Math.round(b * 255f);
+	}
+
+	/** Packed ARGB to HSV components {h, s, v}, each 0..1. */
+	private static float[] rgbToHsv(int argb) {
+		float r = ((argb >> 16) & 0xFF) / 255f;
+		float g = ((argb >> 8) & 0xFF) / 255f;
+		float b = (argb & 0xFF) / 255f;
+		float max = Math.max(r, Math.max(g, b));
+		float min = Math.min(r, Math.min(g, b));
+		float d = max - min;
+		float h = 0f;
+		if (d != 0f) {
+			if (max == r) {
+				h = ((g - b) / d) % 6f;
+			} else if (max == g) {
+				h = (b - r) / d + 2f;
+			} else {
+				h = (r - g) / d + 4f;
+			}
+			h /= 6f;
+			if (h < 0f) {
+				h += 1f;
+			}
+		}
+		return new float[] {h, max == 0f ? 0f : d / max, max};
 	}
 
 	private static String catName(Category cat) {

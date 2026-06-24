@@ -75,6 +75,16 @@ public final class NeteaseApi {
 		}
 	}
 
+	/** Clears the login: resets the cookie to the anonymous default and deletes the saved file. */
+	public static void logout() {
+		cookie = "os=pc; appver=8.9.70";
+		try {
+			Files.deleteIfExists(cookieFile());
+		} catch (Exception ignored) {
+			// best-effort
+		}
+	}
+
 	/** Loads a previously saved cookie. @return {@code true} if one was found. */
 	public static boolean loadCookie() {
 		try {

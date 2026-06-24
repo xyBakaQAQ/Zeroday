@@ -12,6 +12,7 @@ import com.xybakaqaq.Zeroday;
 import com.xybakaqaq.modules.Module;
 import com.xybakaqaq.modules.ModuleManager;
 import com.xybakaqaq.modules.settings.BooleanSetting;
+import com.xybakaqaq.modules.settings.ColorSetting;
 import com.xybakaqaq.modules.settings.ModeSetting;
 import com.xybakaqaq.modules.settings.NumberSetting;
 import com.xybakaqaq.modules.settings.Setting;
@@ -101,6 +102,8 @@ public final class ModuleConfig {
 			mode.setValue(value.getAsString());
 		} else if (setting instanceof NumberSetting number) {
 			number.setValue(value.getAsDouble());
+		} else if (setting instanceof ColorSetting color) {
+			color.setValue(value.getAsInt());
 		} else {
 			((Setting<Object>) setting).setValue(value.getAsString());
 		}

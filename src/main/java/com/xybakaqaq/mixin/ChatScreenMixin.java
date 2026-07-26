@@ -1,11 +1,15 @@
 package com.xybakaqaq.mixin;
 
 import com.xybakaqaq.command.CommandManager;
-import com.xybakaqaq.gui.cloudmusic.CloudMusicWidget;
+import com.xybakaqaq.gui.arraylist.ArrayListWidget;
+import com.xybakaqaq.gui.chat.ChatWidget;
+import com.xybakaqaq.gui.inventory.InventoryWidget;
 import com.xybakaqaq.gui.keystrokes.KeystrokesWidget;
+import com.xybakaqaq.gui.potions.PotionWidget;
 import com.xybakaqaq.gui.targethud.TargetHudWidget;
 import com.xybakaqaq.modules.ModuleManager;
-import com.xybakaqaq.modules.render.CloudMusic;
+import com.xybakaqaq.modules.render.Chat;
+import com.xybakaqaq.modules.render.HUD;
 import com.xybakaqaq.modules.render.Keystrokes;
 import com.xybakaqaq.modules.render.TargetHUD;
 
@@ -20,8 +24,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Routes sent chat input through {@link CommandManager} (commands are handled locally, not sent),
- * and — while the chat bar is open and the mouse is free — routes clicks to the CloudMusic
- * now-playing widget (controls + right-click to open the full UI).
+ * and — while the chat bar is open and the mouse is free — routes clicks to the draggable HUD
+ * widgets (ArrayList, Potions, Inventory, TargetHUD, Keystrokes).
  */
 @Mixin(ChatScreen.class)
 public class ChatScreenMixin {
@@ -35,9 +39,19 @@ public class ChatScreenMixin {
 
 	@Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
 	private void zeroday$onMouseClicked(MouseButtonEvent event, boolean doubleClick, CallbackInfoReturnable<Boolean> cir) {
-		CloudMusic cloudMusic = ModuleManager.get(CloudMusic.class);
-		if (cloudMusic != null && cloudMusic.isEnabled()
-				&& CloudMusicWidget.mouseClicked(event.x(), event.y(), event.button())) {
+		HUD hud = ModuleManager.get(HUD.class);
+		if (hud != null && hud.potions()
+				&& PotionWidget.mouseClicked(event.x(), event.y(), event.button())) {
+			cir.setReturnValue(true);
+			return;
+		}
+		if (hud != null && hud.arrayList().isEnabled()
+				&& ArrayListWidget.mouseClicked(event.x(), event.y(), event.button())) {
+			cir.setReturnValue(true);
+			return;
+		}
+		if (hud != null && hud.inventory()
+				&& InventoryWidget.mouseClicked(event.x(), event.y(), event.button())) {
 			cir.setReturnValue(true);
 			return;
 		}
@@ -50,6 +64,12 @@ public class ChatScreenMixin {
 		Keystrokes keystrokes = ModuleManager.get(Keystrokes.class);
 		if (keystrokes != null && keystrokes.isEnabled()
 				&& KeystrokesWidget.mouseClicked(event.x(), event.y(), event.button())) {
+			cir.setReturnValue(true);
+			return;
+		}
+		Chat chat = ModuleManager.get(Chat.class);
+		if (chat != null && chat.isEnabled()
+				&& ChatWidget.mouseClicked(event.x(), event.y(), event.button())) {
 			cir.setReturnValue(true);
 		}
 	}

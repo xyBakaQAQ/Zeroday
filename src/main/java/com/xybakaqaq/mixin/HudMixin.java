@@ -1,11 +1,14 @@
 package com.xybakaqaq.mixin;
 
-import com.xybakaqaq.gui.cloudmusic.CloudMusicWidget;
+import com.xybakaqaq.gui.arraylist.ArrayListWidget;
+import com.xybakaqaq.gui.chat.ChatWidget;
 import com.xybakaqaq.gui.hotbar.HotbarManager;
+import com.xybakaqaq.gui.inventory.InventoryWidget;
 import com.xybakaqaq.gui.keystrokes.KeystrokesWidget;
+import com.xybakaqaq.gui.potions.PotionWidget;
 import com.xybakaqaq.gui.targethud.TargetHudWidget;
 import com.xybakaqaq.modules.ModuleManager;
-import com.xybakaqaq.modules.render.CloudMusic;
+import com.xybakaqaq.modules.render.Chat;
 import com.xybakaqaq.modules.render.Crosshair;
 import com.xybakaqaq.modules.render.HUD;
 import com.xybakaqaq.modules.render.Keystrokes;
@@ -71,14 +74,16 @@ public class HudMixin {
 	@Inject(method = "extractHotbarAndDecorations", at = @At("TAIL"))
 	private void zeroday$onExtractHud(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
 		HUD hud = ModuleManager.get(HUD.class);
-		if (hud != null) {
-			hud.extractArrayList(graphics);
-		}
 		Minecraft mc = Minecraft.getInstance();
 		boolean chatOpen = mc.gui.screen() instanceof ChatScreen;
-		CloudMusic cloudMusic = ModuleManager.get(CloudMusic.class);
-		if (cloudMusic != null && cloudMusic.isEnabled()) {
-			CloudMusicWidget.render(graphics, mc.font, chatOpen);
+		if (hud != null && hud.arrayList().isEnabled()) {
+			ArrayListWidget.render(graphics, chatOpen);
+		}
+		if (hud != null && hud.potions()) {
+			PotionWidget.render(graphics, chatOpen);
+		}
+		if (hud != null && hud.inventory()) {
+			InventoryWidget.render(graphics, chatOpen);
 		}
 		TargetHUD targetHud = ModuleManager.get(TargetHUD.class);
 		if (targetHud != null && targetHud.isEnabled()) {
@@ -88,12 +93,20 @@ public class HudMixin {
 		if (keystrokes != null && keystrokes.isEnabled()) {
 			KeystrokesWidget.render(graphics, chatOpen);
 		}
+		Chat chat = ModuleManager.get(Chat.class);
+		if (chat != null && chat.isEnabled()) {
+			ChatWidget.render(graphics, chatOpen);
+		}
 	}
 
-	// Push the vanilla potion-effect icons down by the ArrayList height so they sit below it.
-	@Inject(method = "extractEffects", at = @At("HEAD"))
+	// Suppress the vanilla potion display when our custom one is on; otherwise push it below the ArrayList.
+	@Inject(method = "extractEffects", at = @At("HEAD"), cancellable = true)
 	private void zeroday$pushEffectsDown(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
 		HUD hud = ModuleManager.get(HUD.class);
+		if (hud != null && hud.potions()) {
+			ci.cancel();
+			return;
+		}
 		graphics.pose().pushMatrix();
 		graphics.pose().translate(0, hud == null ? 0 : hud.arrayListHeight());
 	}

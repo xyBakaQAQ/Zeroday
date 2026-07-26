@@ -6,6 +6,7 @@ import com.xybakaqaq.event.EventManager;
 import com.xybakaqaq.gui.hotbar.HotbarManager;
 import com.xybakaqaq.gui.mainmenu.MainMenu;
 import com.xybakaqaq.modules.ModuleManager;
+import com.xybakaqaq.utils.RenderUtils;
 
 import net.fabricmc.api.ModInitializer;
 
@@ -30,6 +31,7 @@ public class Zeroday implements ModInitializer {
 
 		HotbarManager.init();
 		EventManager.init();
+		RenderUtils.init();
 		ModuleManager.init();
 		ModuleConfig.load();
 		CommandManager.init();

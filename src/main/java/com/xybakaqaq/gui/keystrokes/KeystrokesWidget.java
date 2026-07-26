@@ -2,13 +2,11 @@ package com.xybakaqaq.gui.keystrokes;
 
 import java.util.ArrayDeque;
 
-import org.lwjgl.glfw.GLFW;
-
-import com.xybakaqaq.config.WindowConfig;
 import com.xybakaqaq.modules.ModuleManager;
 import com.xybakaqaq.modules.render.Keystrokes;
-import com.xybakaqaq.utils.Skia;
-import com.xybakaqaq.utils.SkijaBridge;
+import com.xybakaqaq.utils.DragState;
+import com.xybakaqaq.utils.skia.Skia;
+import com.xybakaqaq.utils.skia.SkijaBridge;
 
 import com.mojang.blaze3d.platform.Window;
 
@@ -40,16 +38,12 @@ public final class KeystrokesWidget {
 
 	private static final int ACCENT = 0xFFC20C0C;
 
-	private static int x = 10;
-	private static int y = 120;
-	private static boolean posLoaded;
-	private static boolean dragging;
-	private static double dragOffX;
-	private static double dragOffY;
+	private static final DragState drag = new DragState(WINDOW);
 
 	// per-key press animation (0=up,1=left,2=down,3=right,4=lmb,5=rmb,6=space,7=shift)
 	private static final float[] anim = new float[8];
 	private static long lastNanos;
+	private static long animSeq;
 
 	// CPS click timestamps (ms) + edge state
 	private static final ArrayDeque<Long> lmbClicks = new ArrayDeque<>();
@@ -65,22 +59,15 @@ public final class KeystrokesWidget {
 	}
 
 	public static void render(GuiGraphicsExtractor graphics, boolean chatOpen) {
-		if (!posLoaded) {
-			x = WindowConfig.getX(WINDOW, x);
-			y = WindowConfig.getY(WINDOW, y);
-			posLoaded = true;
-		}
 		Keystrokes module = ModuleManager.get(Keystrokes.class);
 		boolean showSpace = module == null || module.showSpace();
 		boolean showShift = module != null && module.showShift();
 		boolean showCps = module != null && module.showCps();
 
 		int h = height(showSpace, showShift);
-		if (!chatOpen) {
-			dragging = false;
-		} else if (dragging) {
-			updateDrag(h);
-		}
+		drag.update(chatOpen, W, h, graphics.guiWidth(), graphics.guiHeight(), 10, 120);
+		int x = drag.x();
+		int y = drag.y();
 
 		Minecraft mc = Minecraft.getInstance();
 		Options o = mc.options;
@@ -104,19 +91,29 @@ public final class KeystrokesWidget {
 		long now = System.nanoTime();
 		float dt = lastNanos == 0 ? 0f : Math.min(0.1f, (now - lastNanos) / 1.0e9f);
 		lastNanos = now;
+		boolean settled = true;
 		for (int i = 0; i < anim.length; i++) {
-			anim[i] += ((down[i] ? 1f : 0f) - anim[i]) * Math.min(1f, dt * 16f);
+			float target = down[i] ? 1f : 0f;
+			anim[i] += (target - anim[i]) * Math.min(1f, dt * 16f);
+			if (Math.abs(anim[i] - target) < 0.01f) {
+				anim[i] = target;
+			} else {
+				settled = false;
+			}
 		}
 
 		String lmb = showCps ? String.valueOf(lmbClicks.size()) : "LMB";
 		String rmb = showCps ? String.valueOf(rmbClicks.size()) : "RMB";
+
+		// re-raster every frame only while a highlight is mid-fade; otherwise cache by state
+		long key = settled ? SkijaBridge.key(down, lmb, rmb, showSpace, showShift) : ++animSeq;
 
 		Window win = mc.getWindow();
 		float scale = win.getGuiScaledWidth() > 0 ? (float) win.getWidth() / win.getGuiScaledWidth() : 1f;
 		int sw = Math.max(1, Math.round(W * scale));
 		int sh = Math.max(1, Math.round(h * scale));
 		try {
-			bridge.render(sw, sh, canvas -> {
+			bridge.render(sw, sh, key, canvas -> {
 				canvas.scale(scale, scale);
 				draw(canvas, o, lmb, rmb, showSpace, showShift, showCps);
 			});
@@ -198,33 +195,7 @@ public final class KeystrokesWidget {
 
 	/** Begins a drag if the left button presses inside the widget. */
 	public static boolean mouseClicked(double mx, double my, int button) {
-		Keystrokes module = ModuleManager.get(Keystrokes.class);
-		int h = height(module == null || module.showSpace(), module != null && module.showShift());
-		if (button == 0 && mx >= x && mx < x + W && my >= y && my < y + h) {
-			dragging = true;
-			dragOffX = mx - x;
-			dragOffY = my - y;
-			return true;
-		}
-		return false;
-	}
-
-	private static void updateDrag(int h) {
-		Minecraft mc = Minecraft.getInstance();
-		Window win = mc.getWindow();
-		if (GLFW.glfwGetMouseButton(win.handle(), GLFW.GLFW_MOUSE_BUTTON_LEFT) != GLFW.GLFW_PRESS) {
-			dragging = false;
-			WindowConfig.set(WINDOW, x, y);
-			return;
-		}
-		double mx = mc.mouseHandler.xpos() * win.getGuiScaledWidth() / win.getScreenWidth();
-		double my = mc.mouseHandler.ypos() * win.getGuiScaledHeight() / win.getScreenHeight();
-		x = clamp((int) Math.round(mx - dragOffX), 0, win.getGuiScaledWidth() - W);
-		y = clamp((int) Math.round(my - dragOffY), 0, win.getGuiScaledHeight() - h);
-	}
-
-	private static int clamp(int v, int lo, int hi) {
-		return Math.max(lo, Math.min(v, hi));
+		return drag.mouseClicked(mx, my, button);
 	}
 
 	private static int lerp(int from, int to, float t) {

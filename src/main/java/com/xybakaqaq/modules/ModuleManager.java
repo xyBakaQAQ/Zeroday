@@ -9,7 +9,8 @@ import com.xybakaqaq.modules.movement.Sprint;
 import com.xybakaqaq.modules.render.Animation;
 import com.xybakaqaq.modules.client.ClickGui;
 import com.xybakaqaq.modules.client.Target;
-import com.xybakaqaq.modules.render.CloudMusic;
+import com.xybakaqaq.modules.render.BlockHighlight;
+import com.xybakaqaq.modules.render.Chat;
 import com.xybakaqaq.modules.render.Crosshair;
 import com.xybakaqaq.modules.render.Environment;
 import com.xybakaqaq.modules.render.FullBright;
@@ -51,7 +52,6 @@ public final class ModuleManager {
 		register(new HUD());
 		register(new Sprint());
 		register(new FullBright());
-		register(new CloudMusic());
 		register(new ClickGui());
 		register(new Animation());
 		register(new TargetHUD());
@@ -60,6 +60,8 @@ public final class ModuleManager {
 		register(new Crosshair());
 		register(new Environment());
 		register(new Keystrokes());
+		register(new BlockHighlight());
+		register(new Chat());
 		Zeroday.LOGGER.info("ModuleManager initialized ({} modules)", MODULES.size());
 	}
 

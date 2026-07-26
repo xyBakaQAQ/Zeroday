@@ -23,7 +23,7 @@ import com.xybakaqaq.modules.settings.ColorSetting;
 import com.xybakaqaq.modules.settings.ModeSetting;
 import com.xybakaqaq.modules.settings.NumberSetting;
 import com.xybakaqaq.modules.settings.Setting;
-import com.xybakaqaq.utils.Skia;
+import com.xybakaqaq.utils.skia.Skia;
 
 import io.github.humbleui.skija.Canvas;
 import io.github.humbleui.skija.Font;
@@ -41,7 +41,8 @@ import net.minecraft.client.input.MouseButtonEvent;
  * The ClickGUI, built on the {@link com.xybakaqaq.gui.ui} framework: one draggable, flexbox-laid-out
  * panel per {@link Category}. Rendered crisply (physical-resolution Skija + HarmonyOS font) with
  * animated hover / on-off transitions. Left-click a module to toggle, right-click to expand its
- * settings + keybind. Panel positions persist to {@code windows.json}.
+ * settings + keybind. Panel positions persist to {@code windows.json}; which modules / dropdowns /
+ * color pickers are expanded is remembered for the rest of the run.
  */
 public class ClickGuiScreen extends UiScreen {
 
@@ -62,9 +63,11 @@ public class ClickGuiScreen extends UiScreen {
 	private final Map<Category, float[]> pos = new EnumMap<>(Category.class);
 	private final Map<Category, Component> panels = new EnumMap<>(Category.class);
 	private final Map<Category, Component> headers = new EnumMap<>(Category.class);
-	private final Set<Module> expanded = new HashSet<>();
-	private final Set<ModeSetting> openModes = new HashSet<>();
-	private final Set<ColorSetting> openColors = new HashSet<>();
+
+	// UI state remembered for the rest of the run (not written to disk)
+	private static final Set<Module> expanded = new HashSet<>();
+	private static final Set<ModeSetting> openModes = new HashSet<>();
+	private static final Set<ColorSetting> openColors = new HashSet<>();
 
 	private Category dragCat;
 	private double dragOffX;

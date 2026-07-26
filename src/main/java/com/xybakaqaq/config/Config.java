@@ -11,10 +11,7 @@ import net.fabricmc.loader.api.FabricLoader;
  *
  * <pre>
  *   config.json            module on/off, keybinds and settings
- *   windows.json           on-screen window positions (e.g. the music widget xy)
- *   cloudmusic/
- *     cookie               NetEase login token
- *     cache/               downloaded cover thumbnails
+ *   windows.json           on-screen window positions (e.g. the arraylist xy)
  * </pre>
  */
 public final class Config {
@@ -34,18 +31,6 @@ public final class Config {
 
 	public static Path windowsFile() {
 		return dir().resolve("windows.json");
-	}
-
-	public static Path cloudmusicDir() {
-		return ensure(DIR.resolve("cloudmusic"));
-	}
-
-	public static Path cookieFile() {
-		return cloudmusicDir().resolve("cookie");
-	}
-
-	public static Path coverCacheDir() {
-		return ensure(cloudmusicDir().resolve("cache"));
 	}
 
 	private static Path ensure(Path path) {

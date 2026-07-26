@@ -1,6 +1,7 @@
-package com.xybakaqaq.utils;
+package com.xybakaqaq.utils.skia;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 import org.lwjgl.system.MemoryUtil;
@@ -38,6 +39,8 @@ public final class SkijaBridge implements AutoCloseable {
 	private boolean directSurface;
 	private int width;
 	private int height;
+	private long lastKey;
+	private boolean hasKey;
 
 	public SkijaBridge(String name) {
 		this.textureId = Identifier.fromNamespaceAndPath("zeroday", name);
@@ -47,9 +50,34 @@ public final class SkijaBridge implements AutoCloseable {
 		return textureId;
 	}
 
+	/** A content key (deep-hashed over {@code parts}) for the cached {@link #render(int, int, long, Consumer)}. */
+	public static long key(Object... parts) {
+		return Arrays.deepHashCode(parts);
+	}
+
 	/** Renders {@code drawer} into a {@code w×h} surface and uploads it. Call on the render thread. */
 	public void render(int w, int h, Consumer<Canvas> drawer) {
 		ensure(w, h);
+		draw(drawer);
+		hasKey = false;
+	}
+
+	/**
+	 * Cached render: skips the raster + GPU upload when {@code key} and the size are unchanged from the
+	 * last call (the texture still holds that content, so the caller just re-blits it). Use a content
+	 * hash as {@code key} for mostly-static widgets to avoid per-frame work. Call on the render thread.
+	 */
+	public void render(int w, int h, long key, Consumer<Canvas> drawer) {
+		if (surface != null && w == width && h == height && hasKey && key == lastKey) {
+			return;
+		}
+		ensure(w, h);
+		draw(drawer);
+		lastKey = key;
+		hasKey = true;
+	}
+
+	private void draw(Consumer<Canvas> drawer) {
 		Canvas canvas = surface.getCanvas();
 		canvas.resetMatrix();
 		canvas.clear(0x00000000);
@@ -84,6 +112,7 @@ public final class SkijaBridge implements AutoCloseable {
 
 	@Override
 	public void close() {
+		hasKey = false;
 		if (surface != null) {
 			surface.close();
 			surface = null;

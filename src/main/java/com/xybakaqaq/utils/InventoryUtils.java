@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 
 import net.minecraft.core.Holder;
-import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -35,8 +34,6 @@ import net.minecraft.world.item.equipment.Equippable;
  * (Yarn 1.21.4) to the Mojang-mapped 26.2 APIs, keeping only what the visual highlight needs.
  */
 public final class InventoryUtils {
-
-	private static final double SCORE_EPSILON = 0.0001D;
 
 	private static final Set<Item> CLEANER_WHITELIST = new HashSet<>(Arrays.asList(
 			Items.ENDER_PEARL, Items.ENDER_EYE, Items.TRIDENT, Items.MACE, Items.TNT,
@@ -160,6 +157,10 @@ public final class InventoryUtils {
 		return CLEANER_WHITELIST.contains(item);
 	}
 
+	/**
+	 * @return the best score of the given category among everything the player owns: the backpack,
+	 *         hotbar, offhand and the armor being worn ({@code -1} if they own nothing of it).
+	 */
 	public static double getPlayerMaxScore(Player player, String category) {
 		double max = -1.0D;
 		for (ItemStack stack : playerGear(player)) {
@@ -168,24 +169,6 @@ public final class InventoryUtils {
 			}
 		}
 		return max;
-	}
-
-	public static int getBestPlayerInventorySlot(Player player, String category) {
-		int bestSlot = -1;
-		double bestScore = -1.0D;
-		NonNullList<ItemStack> main = player.getInventory().getNonEquipmentItems();
-		for (int index = 0; index < main.size(); index++) {
-			ItemStack stack = main.get(index);
-			if (stack.isEmpty() || !category.equals(getHelperItemCategory(stack))) {
-				continue;
-			}
-			double score = calculateScore(player, stack);
-			if (bestSlot == -1 || score > bestScore + SCORE_EPSILON) {
-				bestSlot = index;
-				bestScore = score;
-			}
-		}
-		return bestSlot;
 	}
 
 	public static double calculateScore(Player player, ItemStack stack) {

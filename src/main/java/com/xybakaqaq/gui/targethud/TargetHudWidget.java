@@ -1,13 +1,11 @@
 package com.xybakaqaq.gui.targethud;
 
-import org.lwjgl.glfw.GLFW;
-
-import com.xybakaqaq.config.WindowConfig;
 import com.xybakaqaq.modules.ModuleManager;
 import com.xybakaqaq.modules.render.TargetHUD;
 import com.xybakaqaq.utils.CombatTarget;
-import com.xybakaqaq.utils.Skia;
-import com.xybakaqaq.utils.SkijaBridge;
+import com.xybakaqaq.utils.DragState;
+import com.xybakaqaq.utils.skia.Skia;
+import com.xybakaqaq.utils.skia.SkijaBridge;
 
 import com.mojang.blaze3d.platform.Window;
 
@@ -44,15 +42,11 @@ import org.joml.Vector3f;
 public final class TargetHudWidget {
 
 	private static final int H = 46;
+	private static final int W = 180;
 	private static final int HEAD = 28;
 	private static final String WINDOW = "targethud";
 
-	private static int x = 10;
-	private static int y = 10;
-	private static boolean posLoaded;
-	private static boolean dragging;
-	private static double dragOffX;
-	private static double dragOffY;
+	private static final DragState drag = new DragState(WINDOW);
 
 	private static LivingEntity displayTarget;
 	private static long lastNanos;
@@ -65,6 +59,7 @@ public final class TargetHudWidget {
 	private static float prevHealth;
 	private static float slideIn;
 	private static float clock;
+	private static long animSeq;
 
 	// cached display data (so the fade-out keeps working after the entity is gone)
 	private static String cachedName = "";
@@ -84,16 +79,7 @@ public final class TargetHudWidget {
 	}
 
 	public static void render(GuiGraphicsExtractor graphics, boolean chatOpen) {
-		if (!posLoaded) {
-			x = WindowConfig.getX(WINDOW, x);
-			y = WindowConfig.getY(WINDOW, y);
-			posLoaded = true;
-		}
-		if (!chatOpen) {
-			dragging = false;
-		} else if (dragging) {
-			updateDrag();
-		}
+		drag.update(chatOpen, W, H, graphics.guiWidth(), graphics.guiHeight(), 10, 10);
 
 		long now = System.nanoTime();
 		float dt = lastNanos == 0 ? 0f : Math.min(0.1f, (now - lastNanos) / 1.0e9f);
@@ -152,7 +138,7 @@ public final class TargetHudWidget {
 	}
 
 	private static void drawWidget(GuiGraphicsExtractor graphics) {
-		int w = 180;
+		int w = W;
 		int contentX = 12 + HEAD + 6;
 		float hd = healthDisplay;
 		float ghost = ghostDisplay;
@@ -161,16 +147,21 @@ public final class TargetHudWidget {
 		String name = cachedName;
 		String hpText = cachedHpText;
 
-		int drawX = x - Math.round(slideIn * 18f);
-		int drawY = y - Math.round((1f - appear) * 6f);
+		int drawX = drag.x() - Math.round(slideIn * 18f);
+		int drawY = drag.y() - Math.round((1f - appear) * 6f);
 		int alpha = Math.round(Math.max(0f, Math.min(1f, appear)) * 255f);
+
+		// The panel texture only depends on name / hp / bar / flash; appear (alpha), slide and shake are
+		// applied at blit time, so cache the raster whenever the bar + flash have settled.
+		boolean texSettled = flash < 0.01f && Math.abs(hd - frac) < 0.002f && Math.abs(ghost - hd) < 0.002f;
+		long key = texSettled ? SkijaBridge.key(name, hpText, Math.round(frac * 1000f)) : ++animSeq;
 
 		Window win = Minecraft.getInstance().getWindow();
 		float scale = win.getGuiScaledWidth() > 0 ? (float) win.getWidth() / win.getGuiScaledWidth() : 1f;
 		int sw = Math.max(1, Math.round(w * scale));
 		int sh = Math.max(1, Math.round(H * scale));
 		try {
-			bridge.render(sw, sh, canvas -> {
+			bridge.render(sw, sh, key, canvas -> {
 				canvas.scale(scale, scale);
 				draw(canvas, w, contentX, name, hpText, hd, ghost, frac, flash);
 			});
@@ -230,13 +221,7 @@ public final class TargetHudWidget {
 
 	/** Begins a drag if the left button presses inside the widget. */
 	public static boolean mouseClicked(double mx, double my, int button) {
-		if (button == 0 && mx >= x && mx < x + 180 && my >= y && my < y + H) {
-			dragging = true;
-			dragOffX = mx - x;
-			dragOffY = my - y;
-			return true;
-		}
-		return false;
+		return drag.mouseClicked(mx, my, button);
 	}
 
 	private static LivingEntity resolveTarget(boolean chatOpen) {
@@ -251,20 +236,6 @@ public final class TargetHudWidget {
 			return target;
 		}
 		return chatOpen ? mc.player : null;
-	}
-
-	private static void updateDrag() {
-		Minecraft mc = Minecraft.getInstance();
-		Window win = mc.getWindow();
-		if (GLFW.glfwGetMouseButton(win.handle(), GLFW.GLFW_MOUSE_BUTTON_LEFT) != GLFW.GLFW_PRESS) {
-			dragging = false;
-			WindowConfig.set(WINDOW, x, y);
-			return;
-		}
-		double mx = mc.mouseHandler.xpos() * win.getGuiScaledWidth() / win.getScreenWidth();
-		double my = mc.mouseHandler.ypos() * win.getGuiScaledHeight() / win.getScreenHeight();
-		x = clamp((int) Math.round(mx - dragOffX), 0, win.getGuiScaledWidth() - 180);
-		y = clamp((int) Math.round(my - dragOffY), 0, win.getGuiScaledHeight() - H);
 	}
 
 	private static void draw(Canvas canvas, int w, int contentX, String name, String hpText, float healthFrac, float ghostFrac, float realFrac, float flash) {
@@ -320,10 +291,6 @@ public final class TargetHudWidget {
 			s = s.substring(0, s.length() - 1);
 		}
 		return s + "…";
-	}
-
-	private static int clamp(int v, int lo, int hi) {
-		return Math.max(lo, Math.min(v, hi));
 	}
 
 	private static int lerp(int from, int to, float t) {

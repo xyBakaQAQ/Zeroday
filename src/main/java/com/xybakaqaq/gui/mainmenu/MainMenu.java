@@ -5,8 +5,8 @@ import java.util.List;
 
 import com.xybakaqaq.Zeroday;
 import com.xybakaqaq.utils.Sdf;
-import com.xybakaqaq.utils.Skia;
-import com.xybakaqaq.utils.SkijaBridge;
+import com.xybakaqaq.utils.skia.Skia;
+import com.xybakaqaq.utils.skia.SkijaBridge;
 
 import com.mojang.blaze3d.platform.Window;
 

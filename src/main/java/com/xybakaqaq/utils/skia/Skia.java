@@ -1,4 +1,4 @@
-package com.xybakaqaq.utils;
+package com.xybakaqaq.utils.skia;
 
 import java.io.InputStream;
 

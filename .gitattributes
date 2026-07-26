@@ -1,6 +1,10 @@
 #
 # https://help.github.com/articles/dealing-with-line-endings/
 #
+# Auto-detect text files and normalize line endings (LF in the repo, native on
+# checkout). Detected-binary files are left untouched automatically.
+* text=auto
+
 # Linux start script should use lf
 /gradlew        text eol=lf
 

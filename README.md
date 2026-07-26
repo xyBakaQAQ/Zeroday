@@ -1,6 +1,6 @@
 <h1 align="center">Zeroday</h1>
 
-<p align="center">Skija 驱动的 Minecraft Fabric 客户端 · 网易云音乐 · ClickGUI · 自定义主菜单</p>
+<p align="center">Skija 渲染的 Minecraft Fabric 客户端 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Minecraft-26.2-62B47A" alt="Minecraft 26.2">
@@ -12,22 +12,17 @@
 
 ---
 
-一个面向 **Minecraft 26.2** 的 Fabric 客户端模组,使用 **Java 25**、**Mojang 官方映射**,并以 **Skija(Skia 的 Java 绑定)** 渲染高质量 UI。
-
-> 包名 `com.xybakaqaq` · Mod ID `zeroday` · 仅客户端。
+一个 **Minecraft 26.2** 的 Fabric 客户端模组,使用 **Java 25**、**Mojang 官方映射**,并以 **Skija(Skia 的 Java 绑定)** 渲染。
 
 ---
 
 ## 🔨 构建
 
-需要 **JDK 25**(如 Azul Zulu 25)。
+需要 **JDK 25**。
 
 ```bash
 ./gradlew build
 ```
-
-产物在 `build/libs/zeroday-1.0.0.jar`,放入 `.minecraft/mods/` 即可(需 Fabric Loader `0.19.3+` 与 Fabric API)。
-
 ---
 
 ## 📄 License

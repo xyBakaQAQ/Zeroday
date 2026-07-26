@@ -1,6 +1,6 @@
 package com.xybakaqaq.gui.ui;
 
-import com.xybakaqaq.utils.SkijaBridge;
+import com.xybakaqaq.utils.skia.SkijaBridge;
 
 import com.mojang.blaze3d.platform.Window;
 
@@ -67,11 +67,13 @@ public abstract class UiScreen extends Screen {
 			root.update(dt, mouseX, mouseY);
 
 			Window win = minecraft.getWindow();
-			int fbW = win.getWidth();
-			int fbH = win.getHeight();
-			float scale = width > 0 ? (float) fbW / width : 1f;
+			// Render at most 2× the GUI size — full framebuffer res (e.g. 4×) is a huge per-frame
+			// raster + upload for no visible gain, since text is already supersampled at 2×.
+			float scale = width > 0 ? Math.min(2.0f, (float) win.getWidth() / width) : 1f;
+			int rw = Math.max(1, Math.round(width * scale));
+			int rh = Math.max(1, Math.round(height * scale));
 			try {
-				bridge.render(fbW, fbH, canvas -> {
+				bridge.render(rw, rh, canvas -> {
 					canvas.scale(scale, scale);
 					try (Paint paint = new Paint()) {
 						paint.setAntiAlias(true);
@@ -79,7 +81,7 @@ public abstract class UiScreen extends Screen {
 					}
 				});
 				graphics.blit(RenderPipelines.GUI_TEXTURED, bridge.textureId(), 0, 0, 0.0F, 0.0F,
-						width, height, fbW, fbH, fbW, fbH);
+						width, height, rw, rh, rw, rh);
 			} catch (Throwable ignored) {
 				// Skija unavailable — nothing drawn.
 			}

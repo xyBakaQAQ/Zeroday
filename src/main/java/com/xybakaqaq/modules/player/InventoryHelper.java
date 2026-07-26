@@ -1,7 +1,9 @@
 package com.xybakaqaq.modules.player;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.lwjgl.glfw.GLFW;
@@ -18,8 +20,12 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * Visual inventory helper (ported from Flowing, visual mode only): compares <b>only weapons and
- * armor</b> against the best of their kind you own, tinting the slot green when it is better and red
- * when it is worse. Everything else (tools, blocks, food, misc) is left untinted. No automation.
+ * armor</b> against the best of their kind you own — the backpack, hotbar, offhand AND the armor
+ * you are wearing, so chest contents are always measured against your equipped gear too. Your own
+ * slots are tinted green when (tied for) the best — including identical duplicates and worn gear —
+ * and red when strictly worse. In chests, items strictly better than your best are green, strictly
+ * worse are red, and ties are left untinted. Everything else (tools, blocks, food, misc) is left
+ * untinted. No automation.
  */
 public final class InventoryHelper extends Module {
 
@@ -68,12 +74,15 @@ public final class InventoryHelper extends Module {
 		if (player.getAbilities().instabuild || player.isSpectator()) {
 			return;
 		}
+		// per-refresh cache of each category's best owned score (armor scoring walks enchantments,
+		// so don't recompute it per slot)
+		Map<String, Double> bestOwned = new HashMap<>();
 		for (Slot slot : slots) {
 			ItemStack stack = slot.getItem();
 			if (stack.isEmpty()) {
 				continue;
 			}
-			ItemLevel level = getItemLevel(player, stack, slot);
+			ItemLevel level = getItemLevel(player, stack, slot, bestOwned);
 			if (level == ItemLevel.BETTER) {
 				usefulSlots.add(slot.index);
 			} else if (level == ItemLevel.GARBAGE) {
@@ -82,22 +91,26 @@ public final class InventoryHelper extends Module {
 		}
 	}
 
-	private ItemLevel getItemLevel(Player player, ItemStack stack, Slot slot) {
+	private ItemLevel getItemLevel(Player player, ItemStack stack, Slot slot, Map<String, Double> bestOwned) {
 		String category = InventoryUtils.getHelperItemCategory(stack);
 		// only weapons and armor are compared — everything else is left untinted
 		if (!category.startsWith("weapon_") && !category.startsWith("armor_")) {
 			return ItemLevel.NORMAL;
 		}
-		double currentScore = InventoryUtils.calculateScore(player, stack);
-		double playerMax = InventoryUtils.getPlayerMaxScore(player, category);
+		// the best of its kind among everything you own: backpack, hotbar, offhand AND the armor
+		// you are wearing — so chest contents are always measured against your equipped gear too
+		double best = bestOwned.computeIfAbsent(category, c -> InventoryUtils.getPlayerMaxScore(player, c));
+		double score = InventoryUtils.calculateScore(player, stack);
 		if (slot.container == player.getInventory()) {
-			int bestSlot = InventoryUtils.getBestPlayerInventorySlot(player, category);
-			if (slot.getContainerSlot() == bestSlot && currentScore > 0.0D && Math.abs(currentScore - playerMax) < EPS) {
-				return ItemLevel.BETTER;
-			}
-			return ItemLevel.GARBAGE;
+			// tied for the best of its kind (incl. identical duplicates and the gear you're
+			// wearing) → green; strictly worse than something else you own → red
+			return score > 0.0D && score >= best - EPS ? ItemLevel.BETTER : ItemLevel.GARBAGE;
 		}
-		return currentScore > playerMax + EPS ? ItemLevel.BETTER : ItemLevel.GARBAGE;
+		// chest etc.: strictly better than your best → green, strictly worse → red, tie → untinted
+		if (score > best + EPS) {
+			return ItemLevel.BETTER;
+		}
+		return score < best - EPS ? ItemLevel.GARBAGE : ItemLevel.NORMAL;
 	}
 
 	private enum ItemLevel {

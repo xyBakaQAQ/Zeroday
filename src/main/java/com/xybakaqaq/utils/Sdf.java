@@ -1,12 +1,12 @@
 package com.xybakaqaq.utils;
 
-import com.mojang.blaze3d.GpuFormat;
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.pipeline.BlendFunction;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
@@ -20,8 +20,9 @@ import org.joml.Matrix3x2fc;
 import org.jspecify.annotations.Nullable;
 
 /**
- * GPU-shader UI primitives, rendered through Minecraft 26.2's programmable {@code RenderPipeline}
- * abstraction (backend-agnostic — runs on both the OpenGL and Vulkan backends). A custom SDF
+ * GPU-shader UI primitives, rendered through Minecraft's programmable {@code RenderPipeline}
+ * abstraction ({@code com.mojang.renderpearl} since 26.3, backend-agnostic — runs on both the
+ * OpenGL and Vulkan backends). A custom SDF
  * shader draws perfectly anti-aliased rounded rectangles with a vertical gradient, on the GPU.
  *
  * <p>Per-shape parameters are smuggled through standard vertex channels (no custom uniforms, so no
@@ -45,7 +46,8 @@ public final class Sdf {
 			.withVertexShader(id("core/sdf_panel"))
 			.withFragmentShader(id("core/sdf_panel"))
 			.withBindGroupLayout(BindGroupLayouts.GLOBALS)
-			.withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
+			.withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
+			.withBindGroupLayout(BindGroupLayouts.PROJECTION)
 			.withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
 			.withVertexBinding(0, FORMAT)
 			.withPrimitiveTopology(PrimitiveTopology.QUADS)

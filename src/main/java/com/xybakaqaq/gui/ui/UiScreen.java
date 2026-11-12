@@ -91,7 +91,10 @@ public abstract class UiScreen extends Screen {
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-		if (root != null && root.dispatchClick(event.x(), event.y(), event.button())) {
+		// 26.3 reports SDL buttons (1 = left, 2 = middle, 3 = right). Only left and right mean
+		// anything to our components, and filtering here keeps middle/extra buttons inert.
+		int button = event.button();
+		if (root != null && (button == 1 || button == 3) && root.dispatchClick(event.x(), event.y(), button)) {
 			return true;
 		}
 		return super.mouseClicked(event, doubleClick);

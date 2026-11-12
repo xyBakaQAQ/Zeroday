@@ -1,6 +1,6 @@
 package com.xybakaqaq.modules.render;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
@@ -12,6 +12,6 @@ import com.xybakaqaq.modules.Module;
 public final class Chat extends Module {
 
 	public Chat() {
-		super("Chat", Category.RENDER, "Skija-rendered draggable chat log.", GLFW.GLFW_KEY_UNKNOWN);
+		super("Chat", Category.RENDER, "Skija-rendered draggable chat log.", InputConstants.UNKNOWN.getValue());
 	}
 }

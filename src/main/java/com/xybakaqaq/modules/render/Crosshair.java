@@ -1,6 +1,6 @@
 package com.xybakaqaq.modules.render;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
@@ -27,7 +27,7 @@ public final class Crosshair extends Module {
 	private final ColorSetting defaultColor = new ColorSetting("Default", 0xFFFFFFFF);
 
 	public Crosshair() {
-		super("Crosshair", Category.RENDER, "Colors the crosshair by the entity you aim at.", GLFW.GLFW_KEY_UNKNOWN);
+		super("Crosshair", Category.RENDER, "Colors the crosshair by the entity you aim at.", InputConstants.UNKNOWN.getValue());
 	}
 
 	private int colorFor(Entity entity) {

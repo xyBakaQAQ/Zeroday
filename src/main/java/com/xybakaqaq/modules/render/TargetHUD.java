@@ -1,6 +1,6 @@
 package com.xybakaqaq.modules.render;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
@@ -16,7 +16,7 @@ public final class TargetHUD extends Module {
 	private final NumberSetting distance = new NumberSetting("Distance", 6.0, 1.0, 10.0, 1.0);
 
 	public TargetHUD() {
-		super("TargetHUD", Category.RENDER, "Skija target HUD (drag while chat is open).", GLFW.GLFW_KEY_UNKNOWN);
+		super("TargetHUD", Category.RENDER, "Skija target HUD (drag while chat is open).", InputConstants.UNKNOWN.getValue());
 	}
 
 	/** @return the max distance (blocks) the target stays shown. */

@@ -1,7 +1,5 @@
 package com.xybakaqaq.utils;
 
-import org.lwjgl.glfw.GLFW;
-
 import com.xybakaqaq.config.WindowConfig;
 
 import com.mojang.blaze3d.platform.Window;
@@ -24,6 +22,9 @@ import com.xybakaqaq.utils.IMinecraft;
  * rect), and route chat-screen clicks to {@link #mouseClicked}.
  */
 public final class DragState {
+
+	/** SDL mouse button indices, as reported by 26.3's {@code MouseButtonEvent.button()}. */
+	private static final int SDL_BUTTON_LEFT = 1;
 
 	private final String window;
 
@@ -84,9 +85,9 @@ public final class DragState {
 		lastH = panelH;
 	}
 
-	/** Begins a drag if the left button presses inside the last drawn rect. */
+	/** Begins a drag if the left button (SDL button 1) presses inside the last drawn rect. */
 	public boolean mouseClicked(double mx, double my, int button) {
-		if (button == 0 && mx >= lastX && mx < lastX + lastW && my >= lastY && my < lastY + lastH) {
+		if (button == SDL_BUTTON_LEFT && mx >= lastX && mx < lastX + lastW && my >= lastY && my < lastY + lastH) {
 			dragging = true;
 			dragOffX = mx - x;
 			dragOffY = my - y;
@@ -98,7 +99,7 @@ public final class DragState {
 	private void updateDrag(int rangeX, int rangeY) {
 		Minecraft mc = Minecraft.getInstance();
 		Window win = mc.getWindow();
-		if (GLFW.glfwGetMouseButton(win.handle(), GLFW.GLFW_MOUSE_BUTTON_LEFT) != GLFW.GLFW_PRESS) {
+		if (!mc.mouseHandler.isLeftPressed()) {
 			dragging = false;
 			WindowConfig.setFraction(window, fx, fy);
 			return;

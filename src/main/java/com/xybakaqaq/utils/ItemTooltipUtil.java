@@ -5,19 +5,15 @@ import java.util.Locale;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.world.level.block.Blocks;
 
 /**
  * Computes the stat line shown under the held-item name:
@@ -27,8 +23,8 @@ import net.minecraft.world.level.block.Blocks;
  *   <li>weapons and axes → attack damage</li>
  * </ul>
  *
- * All lines are white. Armor is not shown. Axes ({@code AxeItem} still exists in 26.2) are
- * treated as weapons so they show attack damage rather than the "Tools" label.
+ * All lines are white. Armor is not shown. Axes are treated as weapons so they show attack
+ * damage rather than the "Tools" label.
  */
 @SuppressWarnings("deprecation") // built-in registry / block-state accessors carry Mojang's soft-deprecation
 public final class ItemTooltipUtil {
@@ -60,21 +56,12 @@ public final class ItemTooltipUtil {
 	}
 
 	/**
-	 * True for pickaxes, shovels and hoes. Shovels and hoes have dedicated classes; pickaxes
-	 * don't, so they're detected by mining stone faster than their own default speed. Swords
-	 * are efficient on leaves/plants (so leaves can't be used to detect tools) but never on
-	 * stone, so they correctly fall through. Axes are treated as weapons and excluded.
+	 * True for pickaxes, shovels and hoes. 26.3's tools are data-driven, so they're identified by
+	 * their item tags; axes are not in this set and fall through to the attack-damage line.
 	 */
 	private static boolean isMiningTool(ItemStack stack) {
-		Item item = stack.getItem();
-		if (item instanceof AxeItem) {
-			return false;
-		}
-		if (item instanceof HoeItem || item instanceof ShovelItem) {
-			return true;
-		}
-		Tool tool = stack.get(DataComponents.TOOL);
-		return tool != null && tool.getMiningSpeed(Blocks.STONE.defaultBlockState()) > tool.defaultMiningSpeed();
+		Holder<Item> item = stack.typeHolder();
+		return item.is(ItemTags.PICKAXES) || item.is(ItemTags.SHOVELS) || item.is(ItemTags.HOES);
 	}
 
 	private static double attackDamage(ItemStack stack) {

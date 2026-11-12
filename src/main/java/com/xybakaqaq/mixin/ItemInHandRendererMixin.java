@@ -7,14 +7,15 @@ import com.mojang.math.Axis;
 import com.xybakaqaq.modules.ModuleManager;
 import com.xybakaqaq.modules.render.Animation;
 
-import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.renderer.ItemInHandRenderer;
+import net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState;
+import net.minecraft.client.renderer.state.level.PlayerRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -29,10 +30,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Swank), offset by the module's Item X/Y/Z. When not blocking, vanilla rendering is left untouched.
  * Swords have no vanilla use action, so the blocking intent is detected via {@link Animation#blocking()}.
  *
- * <p>{@code applyItemArmTransform} = Yarn {@code applyEquipOffset}; {@code applyItemArmAttackTransform}
+ * <p>26.3 renamed {@code ItemInHandRenderer} to {@link FirstPersonHandsAndItemsRenderer} and made it
+ * render-state driven; {@code submitArmWithItem} now takes the player/first-person render states.
+ * {@code applyItemArmTransform} = Yarn {@code applyEquipOffset}; {@code applyItemArmAttackTransform}
  * = Yarn {@code applySwingOffset}.
  */
-@Mixin(ItemInHandRenderer.class)
+@Mixin(FirstPersonHandsAndItemsRenderer.class)
 public class ItemInHandRendererMixin {
 
 	@Shadow
@@ -45,42 +48,39 @@ public class ItemInHandRendererMixin {
 		throw new AssertionError();
 	}
 
-	@Shadow
-	public void renderItem(LivingEntity mob, ItemStack itemStack, ItemDisplayContext type, PoseStack poseStack,
-			SubmitNodeCollector submitNodeCollector, int lightCoords) {
-		throw new AssertionError();
-	}
-
 	@Inject(method = "submitArmWithItem", at = @At("HEAD"), cancellable = true)
-	private void zeroday$legacyCombat(AbstractClientPlayer player, float frameInterp, float xRot, InteractionHand hand,
-			float attack, ItemStack itemStack, float inverseArmHeight, PoseStack poseStack,
-			SubmitNodeCollector submitNodeCollector, int lightCoords, CallbackInfo ci) {
+	private void zeroday$legacyCombat(PlayerRenderState playerState, FirstPersonHandsAndItemsRenderState state,
+			float partialTicks, float xRot, InteractionHand hand, float attack, ItemStack itemStack,
+			float inverseArmHeight, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int lightCoords,
+			CallbackInfo ci) {
 		Animation animation = ModuleManager.get(Animation.class);
 		if (animation == null || !animation.isEnabled()) {
 			return;
 		}
-		if (hand != InteractionHand.MAIN_HAND || player.isScoping() || !animation.isWeapon(itemStack)) {
+		if (hand != InteractionHand.MAIN_HAND || state.isScoping || !animation.isWeapon(itemStack)) {
 			return;
 		}
 		if (!Animation.blocking()) {
 			return;
 		}
+		AvatarRenderState avatar = playerState.avatarRenderState;
+		if (avatar == null) {
+			return;
+		}
 
-		HumanoidArm arm = player.getMainArm();
+		HumanoidArm arm = avatar.mainArm;
 		boolean right = arm == HumanoidArm.RIGHT;
 		float side = right ? 1.0F : -1.0F;
 
 		poseStack.pushPose();
 		poseStack.translate(animation.itemX() * side, animation.itemY(), animation.itemZ());
-		applyMode(poseStack, animation.mode().toLowerCase(Locale.ROOT), arm, attack, inverseArmHeight, player);
-		this.renderItem(player, itemStack,
-				right ? ItemDisplayContext.FIRST_PERSON_RIGHT_HAND : ItemDisplayContext.FIRST_PERSON_LEFT_HAND,
-				poseStack, submitNodeCollector, lightCoords);
+		applyMode(poseStack, animation.mode().toLowerCase(Locale.ROOT), arm, attack, inverseArmHeight, avatar);
+		state.mainHandRenderState.submit(poseStack, submitNodeCollector, lightCoords, OverlayTexture.NO_OVERLAY, 0);
 		poseStack.popPose();
 		ci.cancel();
 	}
 
-	private void applyMode(PoseStack poseStack, String mode, HumanoidArm arm, float attack, float equipProgress, AbstractClientPlayer player) {
+	private void applyMode(PoseStack poseStack, String mode, HumanoidArm arm, float attack, float equipProgress, AvatarRenderState avatar) {
 		float pi = (float) Math.PI;
 		float f1 = Mth.sin(Mth.sqrt(attack) * pi);
 		switch (mode) {
@@ -94,16 +94,16 @@ public class ItemInHandRendererMixin {
 				poseStack.translate(-0.05F, 0.08F, 0.0F);
 				this.applyItemArmTransform(poseStack, arm, equipProgress / 1.42F);
 				this.applyItemArmAttackTransform(poseStack, arm, attack);
-				poseStack.mulPose(Axis.YP.rotationDegrees(-f1 * -30.0F));
-				poseStack.mulPose(Axis.YP.rotationDegrees(-f1 * 60.0F));
-				poseStack.mulPose(Axis.ZP.rotationDegrees(-f1 * 32.0F));
+				poseStack.rotateDegrees(Axis.YP, -f1 * -30.0F);
+				poseStack.rotateDegrees(Axis.YP, -f1 * 60.0F);
+				poseStack.rotateDegrees(Axis.ZP, -f1 * 32.0F);
 				baseRotation(poseStack);
 			}
 			case "slide" -> {
 				poseStack.translate(-0.05F, 0.08F, 0.0F);
 				this.applyItemArmTransform(poseStack, arm, equipProgress / 1.42F);
 				this.applyItemArmAttackTransform(poseStack, arm, attack);
-				poseStack.mulPose(Axis.YP.rotationDegrees(-f1 * -30.0F));
+				poseStack.rotateDegrees(Axis.YP, -f1 * -30.0F);
 				baseRotation(poseStack);
 			}
 			case "swank" -> {
@@ -111,18 +111,18 @@ public class ItemInHandRendererMixin {
 				this.applyItemArmTransform(poseStack, arm, equipProgress / 1.42F);
 				this.applyItemArmAttackTransform(poseStack, arm, attack);
 				float swankS = Mth.sin(Mth.sqrt(attack));
-				poseStack.mulPose(Axis.YP.rotationDegrees(-swankS * -1.0F));
-				poseStack.mulPose(Axis.YP.rotationDegrees(77.0F));
-				poseStack.mulPose(Axis.ZP.rotationDegrees(-2.0F));
-				poseStack.mulPose(Axis.XP.rotationDegrees(-80.0F));
+				poseStack.rotateDegrees(Axis.YP, -swankS * -1.0F);
+				poseStack.rotateDegrees(Axis.YP, 77.0F);
+				poseStack.rotateDegrees(Axis.ZP, -2.0F);
+				poseStack.rotateDegrees(Axis.XP, -80.0F);
 			}
 			case "sigma" -> {
 				float sigmaS = Mth.sin(Mth.sqrt(attack) * pi);
-				poseStack.translate(-0.05F, player.isShiftKeyDown() ? 0.08F : 0.15F, -0.1F);
+				poseStack.translate(-0.05F, avatar.isCrouching ? 0.08F : 0.15F, -0.1F);
 				this.applyItemArmTransform(poseStack, arm, 0.0F);
 				this.applyItemArmAttackTransform(poseStack, arm, attack);
-				poseStack.mulPose(Axis.YP.rotationDegrees(sigmaS * 30.0F));
-				poseStack.mulPose(Axis.XP.rotationDegrees(-sigmaS * 40.0F));
+				poseStack.rotateDegrees(Axis.YP, sigmaS * 30.0F);
+				poseStack.rotateDegrees(Axis.XP, -sigmaS * 40.0F);
 				baseRotation(poseStack);
 			}
 			default -> {
@@ -135,8 +135,8 @@ public class ItemInHandRendererMixin {
 
 	/** Shared finishing rotation used by most block modes. */
 	private void baseRotation(PoseStack poseStack) {
-		poseStack.mulPose(Axis.YP.rotationDegrees(77.0F));
-		poseStack.mulPose(Axis.ZP.rotationDegrees(-10.0F));
-		poseStack.mulPose(Axis.XP.rotationDegrees(-80.0F));
+		poseStack.rotateDegrees(Axis.YP, 77.0F);
+		poseStack.rotateDegrees(Axis.ZP, -10.0F);
+		poseStack.rotateDegrees(Axis.XP, -80.0F);
 	}
 }

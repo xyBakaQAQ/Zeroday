@@ -2,26 +2,29 @@ package com.xybakaqaq.command;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import com.xybakaqaq.Zeroday;
 import com.xybakaqaq.command.commands.ToggleCommand;
+import com.xybakaqaq.modules.ModuleManager;
 
 /**
- * Registry and dispatcher for chat commands. A chat message starting with {@link #PREFIX} is
- * routed here via {@link #dispatch(String)} (wire it from a chat-send mixin).
+ * Registry and dispatcher for chat commands. {@link #dispatch(String)} returns {@code true} for any
+ * message it consumed, so the chat mixin can keep it off the server.
+ *
+ * <p>Commands only work while the {@code Command} module (client category) is enabled; that module
+ * also owns the prefix.
  */
 public final class CommandManager {
 
-	public static final String PREFIX = ".";
+	/** Prefix used when the Command module has none configured. */
+	public static final String DEFAULT_PREFIX = ".";
 
 	private static final List<Command> COMMANDS = new ArrayList<>();
 
 	private CommandManager() {
 	}
 
-	/** Registers the built-in commands. Called once from the main mod class. */
 	public static void init() {
 		register(new ToggleCommand());
 		Zeroday.LOGGER.info("CommandManager initialized ({} commands)", COMMANDS.size());
@@ -31,46 +34,46 @@ public final class CommandManager {
 		COMMANDS.add(command);
 	}
 
-	public static List<Command> getCommands() {
-		return Collections.unmodifiableList(COMMANDS);
+	/** @return whether chat commands are active (the Command module is on). */
+	public static boolean enabled() {
+		com.xybakaqaq.modules.client.Command module = module();
+		return module != null && module.isEnabled();
 	}
 
-	/** @return all command names plus aliases (for tab completion). */
-	public static List<String> getNames() {
-		List<String> names = new ArrayList<>();
-		for (Command command : COMMANDS) {
-			names.add(command.getName());
-			Collections.addAll(names, command.getAliases());
-		}
-		return names;
+	/** @return the configured prefix, always non-empty. */
+	public static String prefix() {
+		com.xybakaqaq.modules.client.Command module = module();
+		return module == null ? DEFAULT_PREFIX : module.getPrefix();
+	}
+
+	/** @return every command name and alias (for tab completion). */
+	public static List<String> labels() {
+		return COMMANDS.stream().flatMap(command -> command.labels().stream()).toList();
 	}
 
 	/** @return the command matching {@code label} (name or alias), or {@code null}. */
 	public static Command get(String label) {
-		for (Command command : COMMANDS) {
-			if (command.matches(label)) {
-				return command;
-			}
-		}
-		return null;
+		return COMMANDS.stream().filter(command -> command.matches(label)).findFirst().orElse(null);
 	}
 
-	/**
-	 * If {@code message} starts with {@link #PREFIX}, runs the matching command and returns
-	 * {@code true} so the caller can stop the message from being sent to the server.
-	 */
 	public static boolean dispatch(String message) {
-		if (message == null || !message.startsWith(PREFIX)) {
+		if (message == null || !enabled()) {
 			return false;
 		}
-		String[] parts = message.substring(PREFIX.length()).trim().split("\\s+");
-		if (parts.length == 0 || parts[0].isEmpty()) {
+		String prefix = prefix();
+		if (!message.startsWith(prefix)) {
 			return false;
 		}
+		String[] parts = message.substring(prefix.length()).trim().split("\\s+");
 		Command command = get(parts[0]);
 		if (command != null) {
 			command.execute(Arrays.copyOfRange(parts, 1, parts.length));
 		}
-		return true; // consume anything with the prefix (don't leak to chat)
+		return true; // consume anything with the prefix so it never reaches the server
+	}
+
+	// Fully qualified: this package already has a `Command` (the base class).
+	private static com.xybakaqaq.modules.client.Command module() {
+		return ModuleManager.get(com.xybakaqaq.modules.client.Command.class);
 	}
 }

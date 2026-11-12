@@ -1,6 +1,6 @@
 package com.xybakaqaq.modules.render;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
@@ -32,7 +32,7 @@ public class HUD extends Module {
 	private final BooleanSetting inventory = new BooleanSetting("Inventory", false);
 
 	public HUD() {
-		super("HUD", Category.RENDER, "On-screen HUD: ArrayList, hotbar style, potions.", GLFW.GLFW_KEY_UNKNOWN, true);
+		super("HUD", Category.RENDER, "On-screen HUD: ArrayList, hotbar style, potions.", InputConstants.UNKNOWN.getValue(), true);
 	}
 
 	public BooleanSetting arrayList() {

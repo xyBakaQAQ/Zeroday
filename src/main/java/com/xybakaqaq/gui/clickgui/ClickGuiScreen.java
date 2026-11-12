@@ -8,7 +8,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
+
+import org.lwjgl.sdl.SDLKeyboard;
 
 import com.xybakaqaq.config.WindowConfig;
 import com.xybakaqaq.gui.ui.Anim;
@@ -23,6 +25,7 @@ import com.xybakaqaq.modules.settings.ColorSetting;
 import com.xybakaqaq.modules.settings.ModeSetting;
 import com.xybakaqaq.modules.settings.NumberSetting;
 import com.xybakaqaq.modules.settings.Setting;
+import com.xybakaqaq.modules.settings.StringSetting;
 import com.xybakaqaq.utils.skia.Skia;
 
 import io.github.humbleui.skija.Canvas;
@@ -34,6 +37,7 @@ import io.github.humbleui.skija.Shader;
 import io.github.humbleui.types.RRect;
 import io.github.humbleui.types.Rect;
 
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 
@@ -49,6 +53,10 @@ public class ClickGuiScreen extends UiScreen {
 	private static final int PANEL_W = 116;
 	private static final int HEADER_H = 20;
 	private static final int ROW_H = 16;
+
+	// 26.3 reports SDL mouse buttons (1 = left, 2 = middle, 3 = right), not GLFW's 0/1/2.
+	private static final int MOUSE_LEFT = 1;
+	private static final int MOUSE_RIGHT = 3;
 
 	private static final int PANEL_BG = 0xE01A1A20;
 	private static final int HEADER_BG = 0xFF24242F;
@@ -73,6 +81,7 @@ public class ClickGuiScreen extends UiScreen {
 	private double dragOffX;
 	private double dragOffY;
 	private Module binding;
+	private StringSetting editingString;
 	private NumberRow activeSlider;
 	private ColorPickerRow activeColor;
 
@@ -152,6 +161,8 @@ public class ClickGuiScreen extends UiScreen {
 							}
 						} else if (setting instanceof BooleanSetting booleanSetting) {
 							panel.add(new SettingRow(booleanSetting));
+						} else if (setting instanceof StringSetting stringSetting) {
+							panel.add(new StringRow(stringSetting));
 						}
 					}
 					panel.add(new BindRow(module));
@@ -174,7 +185,7 @@ public class ClickGuiScreen extends UiScreen {
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
 		double mx = event.x();
 		double my = event.y();
-		if (event.button() == 0) {
+		if (event.button() == MOUSE_LEFT) {
 			for (Map.Entry<Category, Component> entry : headers.entrySet()) {
 				if (entry.getValue().contains(mx, my)) {
 					dragCat = entry.getKey();
@@ -232,11 +243,42 @@ public class ClickGuiScreen extends UiScreen {
 	public boolean keyPressed(KeyEvent event) {
 		if (binding != null) {
 			int key = event.key();
-			binding.setKey(key == GLFW.GLFW_KEY_ESCAPE ? GLFW.GLFW_KEY_UNKNOWN : key);
+			binding.setKey(key == InputConstants.KEY_ESCAPE ? InputConstants.UNKNOWN.getValue() : key);
 			binding = null;
 			return true;
 		}
+		if (editingString != null) {
+			int key = event.key();
+			if (key == InputConstants.KEY_ESCAPE || key == InputConstants.KEY_RETURN) {
+				editingString = null;
+				rebuild();
+				return true;
+			}
+			if (key == InputConstants.KEY_BACKSPACE) {
+				String value = editingString.getValue();
+				if (!value.isEmpty()) {
+					editingString.setValue(value.substring(0, value.length() - 1));
+					rebuild();
+				}
+				return true;
+			}
+			// Swallow other keys while editing so they don't bind/navigate behind the text field.
+			return true;
+		}
 		return super.keyPressed(event);
+	}
+
+	@Override
+	public boolean charTyped(CharacterEvent event) {
+		if (editingString != null) {
+			String value = editingString.getValue();
+			if (value.length() < editingString.getMaxLength() && !Character.isISOControl(event.codepoint())) {
+				editingString.setValue(value + event.codepointAsString());
+				rebuild();
+			}
+			return true;
+		}
+		return super.charTyped(event);
 	}
 
 	// ---------- rows (custom components) ----------
@@ -279,7 +321,7 @@ public class ClickGuiScreen extends UiScreen {
 
 		@Override
 		protected boolean onClick(double mx, double my, int button) {
-			if (button == 1) {
+			if (button == MOUSE_RIGHT) {
 				if (!expanded.remove(module)) {
 					expanded.add(module);
 				}
@@ -624,6 +666,43 @@ public class ClickGuiScreen extends UiScreen {
 		}
 	}
 
+	/** A free-form text setting: name + current value; click to edit, typing edits, Esc/Enter ends. */
+	private final class StringRow extends Component {
+		private final StringSetting setting;
+		private final Anim hover = new Anim(0);
+
+		StringRow(StringSetting setting) {
+			this.setting = setting;
+			height(ROW_H);
+		}
+
+		@Override
+		protected void onUpdate(float dt, double mx, double my) {
+			hover.set(contains(mx, my) ? 1f : 0f);
+			hover.update(dt);
+		}
+
+		@Override
+		protected void drawSelf(Canvas canvas, Paint paint) {
+			boolean editing = editingString == setting;
+			paint.setMode(PaintMode.FILL);
+			if (editing || hover.value() > 0.01f) {
+				paint.setColor(editing ? 0x33C20C0C : alpha(0x18FFFFFF, hover.value()));
+				canvas.drawRRect(RRect.makeXYWH(x, y, w, h, 0), paint);
+			}
+			drawText(canvas, bodyFont, paint, setting.getName(), x + 14, y, h, SUBTEXT);
+			String value = editing ? setting.getValue() + "_" : setting.getValue();
+			drawTextRight(canvas, bodyFont, paint, value, x + w - 8, y, h, editing ? ACCENT : TEXT);
+		}
+
+		@Override
+		protected boolean onClick(double mx, double my, int button) {
+			editingString = editingString == setting ? null : setting;
+			rebuild();
+			return true;
+		}
+	}
+
 	// ---------- helpers ----------
 
 	private static void drawText(Canvas canvas, Font font, Paint paint, String s, float tx, float rowY, float rowH, int color) {
@@ -715,23 +794,23 @@ public class ClickGuiScreen extends UiScreen {
 	}
 
 	private static String keyName(int key) {
-		if (key == GLFW.GLFW_KEY_UNKNOWN) {
+		if (key == InputConstants.UNKNOWN.getValue()) {
 			return "None";
 		}
-		String name = GLFW.glfwGetKeyName(key, 0);
-		if (name != null) {
-			return name.toUpperCase();
-		}
 		return switch (key) {
-			case GLFW.GLFW_KEY_RIGHT_SHIFT -> "RSHIFT";
-			case GLFW.GLFW_KEY_LEFT_SHIFT -> "LSHIFT";
-			case GLFW.GLFW_KEY_RIGHT_CONTROL -> "RCTRL";
-			case GLFW.GLFW_KEY_LEFT_CONTROL -> "LCTRL";
-			case GLFW.GLFW_KEY_RIGHT_ALT -> "RALT";
-			case GLFW.GLFW_KEY_LEFT_ALT -> "LALT";
-			case GLFW.GLFW_KEY_SPACE -> "SPACE";
-			case GLFW.GLFW_KEY_TAB -> "TAB";
-			default -> "KEY" + key;
+			case InputConstants.KEY_RSHIFT -> "RSHIFT";
+			case InputConstants.KEY_LSHIFT -> "LSHIFT";
+			case InputConstants.KEY_RCONTROL -> "RCTRL";
+			case InputConstants.KEY_LCONTROL -> "LCTRL";
+			case InputConstants.KEY_RALT -> "RALT";
+			case InputConstants.KEY_LALT -> "LALT";
+			case InputConstants.KEY_SPACE -> "SPACE";
+			case InputConstants.KEY_TAB -> "TAB";
+			default -> {
+				int keycode = SDLKeyboard.SDL_GetKeyFromScancode(key, (short) 0, false);
+				String name = SDLKeyboard.SDL_GetKeyName(keycode);
+				yield name != null && !name.isEmpty() ? name.toUpperCase(Locale.ROOT) : "KEY" + key;
+			}
 		};
 	}
 }

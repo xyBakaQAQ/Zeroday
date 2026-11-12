@@ -19,20 +19,12 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-	// ZXing: generate QR codes locally (bundled into the mod jar via jar-in-jar).
-	implementation "com.google.zxing:core:3.5.3"
-	include "com.google.zxing:core:3.5.3"
-
-	// JLayer: pure-Java MP3 decoder for in-game audio playback.
-	implementation "javazoom:jlayer:1.0.1"
-	include "javazoom:jlayer:1.0.1"
-
 	// Skija (Skia 2D) for the high-quality UI chrome, rendered to a raster bitmap then uploaded
 	// as an MC texture. Native lib is platform-specific (windows-x64).
-	implementation "io.github.humbleui:skija-windows-x64:0.143.17"
+	implementation "io.github.humbleui:skija-windows-x64:0.143.18"
 	implementation "io.github.humbleui:types:0.2.0"
-	include "io.github.humbleui:skija-windows-x64:0.143.17"
-	include "io.github.humbleui:skija-shared:0.143.17"
+	include "io.github.humbleui:skija-windows-x64:0.143.18"
+	include "io.github.humbleui:skija-shared:0.143.18"
 	include "io.github.humbleui:types:0.2.0"
 }
 

@@ -1,6 +1,6 @@
 package com.xybakaqaq.modules.client;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
@@ -20,7 +20,7 @@ public final class Target extends Module {
 	private final BooleanSetting dead = new BooleanSetting("Dead", false);
 
 	public Target() {
-		super("Target", Category.CLIENT, "Configures which entities count as targets.", GLFW.GLFW_KEY_UNKNOWN, true);
+		super("Target", Category.CLIENT, "Configures which entities count as targets.", InputConstants.UNKNOWN.getValue(), true);
 	}
 
 	public boolean players() {

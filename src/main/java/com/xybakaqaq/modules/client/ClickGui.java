@@ -1,6 +1,6 @@
 package com.xybakaqaq.modules.client;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.gui.clickgui.ClickGuiScreen;
 import com.xybakaqaq.modules.Category;
@@ -13,7 +13,7 @@ import com.xybakaqaq.modules.Module;
 public final class ClickGui extends Module {
 
 	public ClickGui() {
-		super("ClickGui", Category.CLIENT, "Opens the Skija click GUI.", GLFW.GLFW_KEY_RIGHT_SHIFT);
+		super("ClickGui", Category.CLIENT, "Opens the Skija click GUI.", InputConstants.KEY_RSHIFT);
 	}
 
 	@Override

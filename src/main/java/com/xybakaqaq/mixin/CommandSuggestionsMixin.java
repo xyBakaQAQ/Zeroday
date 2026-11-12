@@ -41,29 +41,23 @@ public class CommandSuggestionsMixin {
 
 	@Inject(method = "updateCommandInfo", at = @At("TAIL"))
 	private void zeroday$suggest(CallbackInfo ci) {
-		if (keepSuggestions) {
+		if (keepSuggestions || !CommandManager.enabled()) {
 			return;
 		}
 		String text = input.getValue();
-		String prefix = CommandManager.PREFIX;
-		if (!text.startsWith(prefix)) {
+		String upToCursor = text.substring(0, Math.min(input.getCursorPosition(), text.length()));
+		String prefix = CommandManager.prefix();
+		if (!upToCursor.startsWith(prefix)) {
 			return;
 		}
 
-		int cursor = Math.min(input.getCursorPosition(), text.length());
-		String upToCursor = text.substring(0, cursor);
-		if (upToCursor.length() < prefix.length()) {
-			return;
-		}
-
+		// Offset of the word being completed, measured in the full input.
 		String afterPrefix = upToCursor.substring(prefix.length());
-		int wordStartInAfter = afterPrefix.lastIndexOf(' ') + 1;
-		int wordStart = prefix.length() + wordStartInAfter;
+		int wordStart = prefix.length() + afterPrefix.lastIndexOf(' ') + 1;
 
 		List<String> candidates;
-		if (wordStartInAfter == 0) {
-			// completing the command name
-			candidates = CommandManager.getNames();
+		if (wordStart == prefix.length()) {
+			candidates = CommandManager.labels(); // completing the command name
 		} else {
 			String[] tokens = afterPrefix.split(" ", -1);
 			Command command = CommandManager.get(tokens[0]);

@@ -1,6 +1,6 @@
 package com.xybakaqaq.modules.render;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
@@ -42,7 +42,7 @@ public final class Animation extends Module {
 	private final NumberSetting itemZ = new NumberSetting("Item Z", 0.0, -1.0, 1.0, 0.01);
 
 	public Animation() {
-		super("Animation", Category.RENDER, "Legacy sword block animations (right-click). Multiple modes.", GLFW.GLFW_KEY_UNKNOWN);
+		super("Animation", Category.RENDER, "Legacy sword block animations (right-click). Multiple modes.", InputConstants.UNKNOWN.getValue());
 		autoBlockRange.visibleWhen(autoBlock::isEnabled);
 	}
 

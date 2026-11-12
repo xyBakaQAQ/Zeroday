@@ -1,18 +1,20 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
+// Must match the engine's DynamicTransforms bind-group layout (26.3 field order).
 layout(std140) uniform DynamicTransforms {
     mat4 ModelViewMat;
+    mat4 TextureMat;
     vec4 ColorModulator;
     vec3 ModelOffset;
-    mat4 TextureMat;
 };
 
-in vec4 vColor;
-in vec2 vLocal;
-in vec2 vHalf;
-in float vRadius;
+layout(location = 0) in vec4 vColor;
+layout(location = 1) in vec2 vLocal;
+layout(location = 2) in vec2 vHalf;
+layout(location = 3) in float vRadius;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 // Signed distance to a rounded box centred at the origin.
 float sdRoundBox(vec2 p, vec2 b, float r) {

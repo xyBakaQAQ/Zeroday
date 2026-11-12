@@ -1,6 +1,6 @@
 package com.xybakaqaq.modules.render;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
@@ -19,7 +19,7 @@ public final class Keystrokes extends Module {
 	private final BooleanSetting cps = new BooleanSetting("CPS", false);
 
 	public Keystrokes() {
-		super("Keystrokes", Category.RENDER, "Shows your movement + mouse keys on screen.", GLFW.GLFW_KEY_UNKNOWN);
+		super("Keystrokes", Category.RENDER, "Shows your movement + mouse keys on screen.", InputConstants.UNKNOWN.getValue());
 	}
 
 	public boolean showSpace() {

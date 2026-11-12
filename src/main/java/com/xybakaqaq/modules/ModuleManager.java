@@ -8,6 +8,7 @@ import com.xybakaqaq.Zeroday;
 import com.xybakaqaq.modules.movement.Sprint;
 import com.xybakaqaq.modules.render.Animation;
 import com.xybakaqaq.modules.client.ClickGui;
+import com.xybakaqaq.modules.client.Command;
 import com.xybakaqaq.modules.client.Target;
 import com.xybakaqaq.modules.render.BlockHighlight;
 import com.xybakaqaq.modules.render.Chat;
@@ -53,6 +54,7 @@ public final class ModuleManager {
 		register(new Sprint());
 		register(new FullBright());
 		register(new ClickGui());
+		register(new Command());
 		register(new Animation());
 		register(new TargetHUD());
 		register(new InventoryHelper());

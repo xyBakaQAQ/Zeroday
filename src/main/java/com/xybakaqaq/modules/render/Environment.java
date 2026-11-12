@@ -1,6 +1,6 @@
 package com.xybakaqaq.modules.render;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
@@ -28,7 +28,7 @@ public final class Environment extends Module {
 	private final NumberSetting timeOfDay = new NumberSetting("Time of Day", 6000, 0, 24000, 100);
 
 	public Environment() {
-		super("Environment", Category.RENDER, "Overrides local weather and time of day.", GLFW.GLFW_KEY_UNKNOWN);
+		super("Environment", Category.RENDER, "Overrides local weather and time of day.", InputConstants.UNKNOWN.getValue());
 		instance = this;
 		weatherMode.visibleWhen(weather::isEnabled);
 		intensity.visibleWhen(weather::isEnabled);

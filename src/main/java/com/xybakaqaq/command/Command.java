@@ -1,5 +1,6 @@
 package com.xybakaqaq.command;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.xybakaqaq.utils.IMinecraft;
@@ -7,18 +8,15 @@ import com.xybakaqaq.utils.IMinecraft;
 import net.minecraft.network.chat.Component;
 
 /**
- * Base class for a chat command. A command has a name, a description and optional aliases;
- * {@link #execute(String[])} runs it with the arguments after the command name.
+ * Base class for a chat command: a name, optional aliases, and {@link #execute(String[])}.
  */
 public abstract class Command implements IMinecraft {
 
 	private final String name;
-	private final String description;
 	private final String[] aliases;
 
-	protected Command(String name, String description, String... aliases) {
+	protected Command(String name, String... aliases) {
 		this.name = name;
-		this.description = description;
 		this.aliases = aliases;
 	}
 
@@ -26,21 +24,21 @@ public abstract class Command implements IMinecraft {
 		return name;
 	}
 
-	public final String getDescription() {
-		return description;
-	}
-
-	public final String[] getAliases() {
-		return aliases;
+	/** @return the name followed by every alias (for tab completion). */
+	public final List<String> labels() {
+		List<String> labels = new ArrayList<>();
+		labels.add(name);
+		labels.addAll(List.of(aliases));
+		return labels;
 	}
 
 	/** @return {@code true} if {@code label} is this command's name or one of its aliases. */
 	public final boolean matches(String label) {
-		if (label.equalsIgnoreCase(name)) {
+		if (name.equalsIgnoreCase(label)) {
 			return true;
 		}
 		for (String alias : aliases) {
-			if (label.equalsIgnoreCase(alias)) {
+			if (alias.equalsIgnoreCase(label)) {
 				return true;
 			}
 		}

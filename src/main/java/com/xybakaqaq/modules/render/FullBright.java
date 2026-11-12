@@ -1,6 +1,6 @@
 package com.xybakaqaq.modules.render;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
@@ -12,6 +12,6 @@ import com.xybakaqaq.modules.Module;
 public final class FullBright extends Module {
 
 	public FullBright() {
-		super("FullBright", Category.RENDER, "Max brightness — removes darkness.", GLFW.GLFW_KEY_UNKNOWN,true);
+		super("FullBright", Category.RENDER, "Max brightness — removes darkness.", InputConstants.UNKNOWN.getValue(),true);
 	}
 }

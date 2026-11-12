@@ -1,6 +1,6 @@
 package com.xybakaqaq.modules.render;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
@@ -23,7 +23,7 @@ public final class BlockHighlight extends Module {
 	private final BooleanSetting throughWalls = new BooleanSetting("ThroughWalls", true);
 
 	public BlockHighlight() {
-		super("BlockHighlight", Category.RENDER, "Highlights the block you are looking at.", GLFW.GLFW_KEY_UNKNOWN);
+		super("BlockHighlight", Category.RENDER, "Highlights the block you are looking at.", InputConstants.UNKNOWN.getValue());
 	}
 
 	@Override

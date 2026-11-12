@@ -1,6 +1,6 @@
 package com.xybakaqaq.modules.movement;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.event.features.TickEvent;
 import com.xybakaqaq.modules.Category;
@@ -14,7 +14,7 @@ import com.xybakaqaq.modules.Module;
 public final class Sprint extends Module {
 
 	public Sprint() {
-		super("Sprint", Category.MOVEMENT, "Hold the sprint key automatically.", GLFW.GLFW_KEY_UNKNOWN, true);
+		super("Sprint", Category.MOVEMENT, "Hold the sprint key automatically.", InputConstants.UNKNOWN.getValue(), true);
 	}
 
 	@Override

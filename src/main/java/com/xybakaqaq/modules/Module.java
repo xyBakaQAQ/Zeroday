@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.event.EventListener;
 import com.xybakaqaq.event.features.KeyboardEvent;
@@ -22,14 +22,14 @@ public abstract class Module implements EventListener, IMinecraft {
 	private final String name;
 	private final Category category;
 	private final String description;
-	/** GLFW key code bound to this module ({@link GLFW#GLFW_KEY_UNKNOWN} = unbound). */
+	/** SDL scancode bound to this module ({@link InputConstants#UNKNOWN} = unbound). */
 	private int key;
 	private boolean enabled;
 	/** Lazily collected from the subclass's {@link Setting} fields (no manual registration). */
 	private List<Setting<?>> settings;
 
 	protected Module(String name, Category category, String description) {
-		this(name, category, description, GLFW.GLFW_KEY_UNKNOWN, false);
+		this(name, category, description, InputConstants.UNKNOWN.getValue(), false);
 	}
 
 	protected Module(String name, Category category, String description, int key) {
@@ -60,12 +60,12 @@ public abstract class Module implements EventListener, IMinecraft {
 		return enabled;
 	}
 
-	/** @return the bound GLFW key code, or {@link GLFW#GLFW_KEY_UNKNOWN} if unbound. */
+	/** @return the bound SDL scancode, or {@link InputConstants#UNKNOWN} if unbound. */
 	public int getKey() {
 		return key;
 	}
 
-	/** Binds (or unbinds, with {@link GLFW#GLFW_KEY_UNKNOWN}) the toggle key. */
+	/** Binds (or unbinds, with {@link InputConstants#UNKNOWN}) the toggle key. */
 	public void setKey(int key) {
 		this.key = key;
 		ModuleManager.notifyChanged();
@@ -125,7 +125,7 @@ public abstract class Module implements EventListener, IMinecraft {
 
 	@Override
 	public void onKey(KeyboardEvent event) {
-		if (event.getAction() == GLFW.GLFW_PRESS && event.getKey() == key) {
+		if (event.getAction() == InputConstants.PRESS && event.getKey() == key) {
 			toggle();
 		}
 	}

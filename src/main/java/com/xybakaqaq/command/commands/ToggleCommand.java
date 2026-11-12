@@ -7,12 +7,12 @@ import com.xybakaqaq.modules.Module;
 import com.xybakaqaq.modules.ModuleManager;
 
 /**
- * {@code .toggle <module>} — toggles a module by name.
+ * {@code toggle <module>} — toggles a module by name.
  */
 public final class ToggleCommand extends Command {
 
 	public ToggleCommand() {
-		super("toggle", "Toggle a module by name.", "t");
+		super("toggle", "t");
 	}
 
 	@Override

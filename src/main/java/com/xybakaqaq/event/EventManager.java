@@ -1,7 +1,6 @@
 package com.xybakaqaq.event;
 
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_UNKNOWN;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import com.xybakaqaq.Zeroday;
 import com.xybakaqaq.event.features.KeyboardEvent;
 import com.xybakaqaq.event.features.TickEvent;
@@ -32,7 +31,7 @@ public final class EventManager {
 	}
 
 	public static void onKey(int key, int action) {
-		if (key == GLFW_KEY_UNKNOWN) {
+		if (key == InputConstants.UNKNOWN.getValue()) {
 			return;
 		}
 		post(new KeyboardEvent(key, action));

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
@@ -38,7 +38,7 @@ public final class InventoryHelper extends Module {
 	private long lastUpdate;
 
 	public InventoryHelper() {
-		super("InventoryHelper", Category.PLAYER, "Highlights better (green) / worse (red) weapon & armor slots.", GLFW.GLFW_KEY_UNKNOWN);
+		super("InventoryHelper", Category.PLAYER, "Highlights better (green) / worse (red) weapon & armor slots.", InputConstants.UNKNOWN.getValue());
 	}
 
 	/** @return the highlight ARGB for the slot, or 0. Called from the container-screen mixin per slot. */

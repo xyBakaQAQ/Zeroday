@@ -16,6 +16,7 @@ import com.xybakaqaq.modules.settings.ColorSetting;
 import com.xybakaqaq.modules.settings.ModeSetting;
 import com.xybakaqaq.modules.settings.NumberSetting;
 import com.xybakaqaq.modules.settings.Setting;
+import com.xybakaqaq.utils.KeyUtils;
 
 /**
  * Persists each module's on/off state, keybind and settings to {@code config.json}. {@link #load()}
@@ -38,7 +39,7 @@ public final class ModuleConfig {
 				// 26.2 stored GLFW keycodes; 26.3 reports SDL scancodes. A file without the marker
 				// predates the switch, so its binds are converted on the way in.
 				boolean legacy = !root.has("keyScheme")
-						|| root.get("keyScheme").getAsInt() < LegacyKeybinds.KEY_SCHEME_SDL;
+						|| root.get("keyScheme").getAsInt() < KeyUtils.KEY_SCHEME_SDL;
 				JsonObject modules = root.has("modules") ? root.getAsJsonObject("modules") : new JsonObject();
 				for (Module module : ModuleManager.getModules()) {
 					if (!modules.has(module.getName())) {
@@ -47,7 +48,7 @@ public final class ModuleConfig {
 					JsonObject entry = modules.getAsJsonObject(module.getName());
 					if (entry.has("key")) {
 						int key = entry.get("key").getAsInt();
-						module.setKey(legacy ? LegacyKeybinds.glfwToScancode(key) : key);
+						module.setKey(legacy ? KeyUtils.glfwToScancode(key) : key);
 					}
 					if (entry.has("settings")) {
 						JsonObject settings = entry.getAsJsonObject("settings");
@@ -92,7 +93,7 @@ public final class ModuleConfig {
 				modules.add(module.getName(), entry);
 			}
 			JsonObject root = new JsonObject();
-			root.addProperty("keyScheme", LegacyKeybinds.KEY_SCHEME_SDL);
+			root.addProperty("keyScheme", KeyUtils.KEY_SCHEME_SDL);
 			root.add("modules", modules);
 			Files.writeString(Config.configFile(), GSON.toJson(root));
 		} catch (Exception ex) {

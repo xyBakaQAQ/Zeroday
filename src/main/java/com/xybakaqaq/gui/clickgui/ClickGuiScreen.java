@@ -10,8 +10,6 @@ import java.util.Set;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
-import org.lwjgl.sdl.SDLKeyboard;
-
 import com.xybakaqaq.config.WindowConfig;
 import com.xybakaqaq.gui.ui.Anim;
 import com.xybakaqaq.gui.ui.Component;
@@ -26,6 +24,7 @@ import com.xybakaqaq.modules.settings.ModeSetting;
 import com.xybakaqaq.modules.settings.NumberSetting;
 import com.xybakaqaq.modules.settings.Setting;
 import com.xybakaqaq.modules.settings.StringSetting;
+import com.xybakaqaq.utils.KeyUtils;
 import com.xybakaqaq.utils.skia.Skia;
 
 import io.github.humbleui.skija.Canvas;
@@ -628,7 +627,9 @@ public class ClickGuiScreen extends UiScreen {
 				hsv[1] = clamp01((float) ((mx - g[0]) / g[2]));
 				hsv[2] = 1f - clamp01((float) ((my - g[1]) / g[3]));
 			}
-			setting.setColor(0xFF000000 | hsvToRgb(hsv[0], hsv[1], hsv[2]));
+			// keep the setting's alpha, so translucent colors (e.g. the chat backdrop) stay translucent
+			int alpha = setting.getColor() & 0xFF000000;
+			setting.setColor((alpha == 0 ? 0xFF000000 : alpha) | hsvToRgb(hsv[0], hsv[1], hsv[2]));
 		}
 	}
 
@@ -655,7 +656,7 @@ public class ClickGuiScreen extends UiScreen {
 				canvas.drawRRect(RRect.makeXYWH(x, y, w, h, 0), paint);
 			}
 			drawText(canvas, bodyFont, paint, "Bind", x + 14, y, h, SUBTEXT);
-			String key = binding == module ? "..." : keyName(module.getKey());
+			String key = binding == module ? "..." : KeyUtils.name(module.getKey());
 			drawTextRight(canvas, bodyFont, paint, key, x + w - 8, y, h, TEXT);
 		}
 
@@ -791,26 +792,5 @@ public class ClickGuiScreen extends UiScreen {
 	private static String catName(Category cat) {
 		String n = cat.name();
 		return n.charAt(0) + n.substring(1).toLowerCase();
-	}
-
-	private static String keyName(int key) {
-		if (key == InputConstants.UNKNOWN.getValue()) {
-			return "None";
-		}
-		return switch (key) {
-			case InputConstants.KEY_RSHIFT -> "RSHIFT";
-			case InputConstants.KEY_LSHIFT -> "LSHIFT";
-			case InputConstants.KEY_RCONTROL -> "RCTRL";
-			case InputConstants.KEY_LCONTROL -> "LCTRL";
-			case InputConstants.KEY_RALT -> "RALT";
-			case InputConstants.KEY_LALT -> "LALT";
-			case InputConstants.KEY_SPACE -> "SPACE";
-			case InputConstants.KEY_TAB -> "TAB";
-			default -> {
-				int keycode = SDLKeyboard.SDL_GetKeyFromScancode(key, (short) 0, false);
-				String name = SDLKeyboard.SDL_GetKeyName(keycode);
-				yield name != null && !name.isEmpty() ? name.toUpperCase(Locale.ROOT) : "KEY" + key;
-			}
-		};
 	}
 }

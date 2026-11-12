@@ -8,20 +8,27 @@ import com.xybakaqaq.utils.IMinecraft;
 import net.minecraft.network.chat.Component;
 
 /**
- * Base class for a chat command: a name, optional aliases, and {@link #execute(String[])}.
+ * Base class for a chat command: a name, optional aliases, a one-line description, and
+ * {@link #execute(String[])}.
  */
 public abstract class Command implements IMinecraft {
 
 	private final String name;
+	private final String description;
 	private final String[] aliases;
 
-	protected Command(String name, String... aliases) {
+	protected Command(String name, String description, String... aliases) {
 		this.name = name;
+		this.description = description;
 		this.aliases = aliases;
 	}
 
 	public final String getName() {
 		return name;
+	}
+
+	public final String getDescription() {
+		return description;
 	}
 
 	/** @return the name followed by every alias (for tab completion). */

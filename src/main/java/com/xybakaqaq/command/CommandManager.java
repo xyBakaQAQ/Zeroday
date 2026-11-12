@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.xybakaqaq.Zeroday;
+import com.xybakaqaq.command.commands.HelpCommand;
 import com.xybakaqaq.command.commands.ToggleCommand;
 import com.xybakaqaq.modules.ModuleManager;
 
@@ -27,11 +28,17 @@ public final class CommandManager {
 
 	public static void init() {
 		register(new ToggleCommand());
+		register(new HelpCommand());
 		Zeroday.LOGGER.info("CommandManager initialized ({} commands)", COMMANDS.size());
 	}
 
 	public static void register(Command command) {
 		COMMANDS.add(command);
+	}
+
+	/** @return all registered commands (for {@code help}). */
+	public static List<Command> commands() {
+		return List.copyOf(COMMANDS);
 	}
 
 	/** @return whether chat commands are active (the Command module is on). */

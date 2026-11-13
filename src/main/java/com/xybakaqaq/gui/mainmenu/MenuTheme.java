@@ -2,6 +2,8 @@ package com.xybakaqaq.gui.mainmenu;
 
 import com.xybakaqaq.config.UiConfig;
 import com.xybakaqaq.mixin.WinScreenAccessor;
+import com.xybakaqaq.modules.ModuleManager;
+import com.xybakaqaq.modules.client.Theme;
 import com.xybakaqaq.utils.Sdf;
 
 import net.minecraft.client.Minecraft;
@@ -27,6 +29,7 @@ import net.minecraft.client.gui.screens.GenericWaitingScreen;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
 import net.minecraft.client.gui.screens.ManageServerScreen;
 import net.minecraft.client.gui.screens.NoticeWithLinkScreen;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.PresetFlatWorldScreen;
 import net.minecraft.client.gui.screens.ProgressScreen;
 import net.minecraft.client.gui.screens.RecoverWorldDataScreen;
@@ -36,9 +39,11 @@ import net.minecraft.client.gui.screens.WorldOptionsScreen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 
-// Generic Skija skin for the menu pages we keep vanilla: creates/edits worlds, options, packs,
-// server screens, confirmations and the loading screens. Those pages still render themselves; we only
-// replace the background, the list panels and the faces of their buttons, sliders and labels.
+// Generic Skija skin for the pages we keep vanilla: the ESC menu, world creation and editing,
+// options, packs, server screens, confirmations and the loading screens. Those pages still render
+// themselves; we only replace the background, the list panels and the faces of their buttons, sliders
+// and labels. Out of a world the opaque menu backdrop is used; in game the world stays visible behind
+// a blurred dark wash.
 public final class MenuTheme {
 
 	private static final int TEXT = 0xFFE8E8EA;
@@ -49,28 +54,36 @@ public final class MenuTheme {
 	}
 
 	public static boolean themed(Screen screen) {
-		if (screen == null || !UiConfig.customMenu()) {
+		if (screen == null) {
 			return false;
 		}
-		if (screen instanceof LevelLoadingScreen
+		// In game the Theme module is the switch; the pages outside a world follow the custom-menu
+		// switch on the title screen.
+		if (Minecraft.getInstance().level != null) {
+			Theme theme = ModuleManager.get(Theme.class);
+			if (theme == null || !theme.isEnabled()) {
+				return false;
+			}
+		} else if (!UiConfig.customMenu()) {
+			return false;
+		}
+		return isThemedPage(screen);
+	}
+
+	private static boolean isThemedPage(Screen screen) {
+		if (screen instanceof PauseScreen || screen instanceof LevelLoadingScreen
 				|| screen instanceof SelectWorldScreen || screen instanceof JoinMultiplayerScreen) {
 			return true;
 		}
 		String pkg = screen.getClass().getPackageName();
 		if (pkg.equals("net.minecraft.client.gui.screens.worldselection")
 				|| pkg.startsWith("net.minecraft.client.gui.screens.options")
-				|| pkg.startsWith("net.minecraft.client.gui.screens.packs")) {
+				|| pkg.startsWith("net.minecraft.client.gui.screens.packs")
+				|| pkg.equals("net.minecraft.client.gui.screens.multiplayer")) {
 			return true;
 		}
-		// Second-level pages reached from those (world options/customisation, server management,
-		// confirmations, join warnings). Only outside a world, so in-game dialogs keep the blurred
-		// game behind them.
-		if (Minecraft.getInstance().level != null) {
-			return false;
-		}
-		if (pkg.equals("net.minecraft.client.gui.screens.multiplayer")) {
-			return true;
-		}
+		// Second-level pages (world options/customisation, server management, confirmations, join
+		// warnings), plus the loading and error screens.
 		return screen instanceof ConfirmScreen || screen instanceof AlertScreen
 				|| screen instanceof WorldOptionsScreen || screen instanceof CreateFlatWorldScreen
 				|| screen instanceof PresetFlatWorldScreen || screen instanceof CreateBuffetWorldScreen
@@ -109,12 +122,24 @@ public final class MenuTheme {
 	// Backdrop plus a rounded panel under every list, then the vanilla background is cancelled.
 	public static void renderBackground(Screen screen, GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
 		MenuLabel.beginFrame(screen);
-		MenuBackdrop.draw(graphics);
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.level != null) {
+			// The world stays visible in game: blur it like vanilla does, then lay a dark wash over it
+			// instead of the opaque menu backdrop.
+			if (minecraft.options.getMenuBackgroundBlurriness() >= 1) {
+				graphics.blurBeforeThisStratum();
+			}
+			graphics.fillGradient(0, 0, graphics.guiWidth(), graphics.guiHeight(), 0xA612121A, 0xD80B0B11);
+		} else {
+			MenuBackdrop.draw(graphics);
+		}
 		for (GuiEventListener child : screen.children()) {
 			if (child instanceof AbstractSelectionList<?> list && list.visible) {
 				Sdf.roundRect(graphics, list.getX(), list.getY(), list.getWidth(), list.getHeight(), 6, 0x4D141420);
 			}
 		}
+		// The vanilla background pass ends by flushing any deferred subtitles.
+		minecraft.gui.hud.extractDeferredSubtitles();
 	}
 
 	// Button face: rounded panel, accent bar on hover, label on top. Drawn live by the widget so it also

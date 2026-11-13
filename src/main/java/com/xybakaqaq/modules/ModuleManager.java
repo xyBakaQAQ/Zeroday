@@ -10,6 +10,7 @@ import com.xybakaqaq.modules.render.Animation;
 import com.xybakaqaq.modules.client.ClickGui;
 import com.xybakaqaq.modules.client.Command;
 import com.xybakaqaq.modules.client.Target;
+import com.xybakaqaq.modules.client.Theme;
 import com.xybakaqaq.modules.render.BlockHighlight;
 import com.xybakaqaq.modules.render.Chat;
 import com.xybakaqaq.modules.render.Crosshair;
@@ -52,6 +53,7 @@ public final class ModuleManager {
 		register(new FullBright());
 		register(new ClickGui());
 		register(new Command());
+		register(new Theme());
 		register(new Animation());
 		register(new TargetHUD());
 		register(new InventoryHelper());

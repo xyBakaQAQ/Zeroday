@@ -11,6 +11,7 @@
 		"ClientLevelMixin",
 		"CommandSuggestionsMixin",
 		"ContextualBarMixin",
+		"GuiGraphicsExtractorMixin",
 		"HudMixin",
 		"ItemInHandRendererMixin",
 		"KeyboardHandlerMixin",

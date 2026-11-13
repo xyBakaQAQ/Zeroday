@@ -16,18 +16,24 @@
 		"ClientLevelMixin",
 		"CommandSuggestionsMixin",
 		"ContextualBarMixin",
+		"EditBoxAccessor",
 		"FocusableTextWidgetMixin",
 		"GuiGraphicsExtractorMixin",
 		"HudMixin",
 		"ItemInHandRendererMixin",
+		"JoinMultiplayerScreenMixin",
 		"KeyboardHandlerMixin",
 		"LevelLoadingScreenMixin",
 		"LevelMixin",
 		"LightmapRenderStateExtractorMixin",
 		"MinecraftMixin",
 		"MultiPlayerGameModeMixin",
+		"ScreenMixin",
+		"SelectWorldScreenMixin",
+		"ServerSelectionListMixin",
 		"TitleScreenMixin",
-		"WinScreenAccessor"
+		"WinScreenAccessor",
+		"WorldSelectionListMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

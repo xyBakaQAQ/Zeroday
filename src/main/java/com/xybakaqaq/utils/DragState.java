@@ -5,25 +5,13 @@ import com.xybakaqaq.config.WindowConfig;
 import com.mojang.blaze3d.platform.Window;
 
 import net.minecraft.client.Minecraft;
-import com.xybakaqaq.utils.IMinecraft;
 
-/**
- * Shared drag-and-position state for the on-screen HUD widgets (ArrayList, Potions, Inventory,
- * Keystrokes, TargetHUD). Each widget owns one static instance keyed by its {@code windows.json}
- * name; the panel is top-left anchored and draggable while the chat bar is open.
- *
- * <p>The position is kept as a fraction (0..1) of the free travel range (gui size minus panel
- * size), so a widget placed at, say, 80% across the screen stays at 80% when the gui scale or
- * window size changes. The fraction persists to {@code windows.json} as {@code "fx"}/{@code "fy"};
- * legacy absolute {@code "x"}/{@code "y"} entries are converted on load.
- *
- * <p>Usage: call {@link #update} once per frame from the widget's render (it lazily loads the
- * persisted position, advances an active drag, clamps the panel on-screen and records the drawn
- * rect), and route chat-screen clicks to {@link #mouseClicked}.
- */
+import org.lwjgl.sdl.SDLMouse;
+
+// Drag-and-position state for a HUD widget; position is stored as a fraction of the free range.
 public final class DragState {
 
-	/** SDL mouse button indices, as reported by 26.3's {@code MouseButtonEvent.button()}. */
+	// SDL mouse buttons, as reported by 26.3's MouseButtonEvent.button().
 	private static final int SDL_BUTTON_LEFT = 1;
 
 	private final String window;
@@ -56,12 +44,7 @@ public final class DragState {
 		return y;
 	}
 
-	/**
-	 * Per-frame housekeeping: loads the persisted position on first call (falling back to
-	 * {@code defX}/{@code defY}), updates the drag while the chat bar is open, converts the
-	 * fractional position to pixels for the current gui size and remembers the drawn rect for
-	 * hit-testing.
-	 */
+	// Per-frame: load the saved position, advance any drag, then resolve it to pixels.
 	public void update(boolean chatOpen, int panelW, int panelH, int guiW, int guiH, int defX, int defY) {
 		int rangeX = Math.max(0, guiW - panelW);
 		int rangeY = Math.max(0, guiH - panelH);
@@ -85,7 +68,7 @@ public final class DragState {
 		lastH = panelH;
 	}
 
-	/** Begins a drag if the left button (SDL button 1) presses inside the last drawn rect. */
+	// Begins a drag if the left button presses inside the last drawn rect.
 	public boolean mouseClicked(double mx, double my, int button) {
 		if (button == SDL_BUTTON_LEFT && mx >= lastX && mx < lastX + lastW && my >= lastY && my < lastY + lastH) {
 			dragging = true;
@@ -99,7 +82,9 @@ public final class DragState {
 	private void updateDrag(int rangeX, int rangeY) {
 		Minecraft mc = Minecraft.getInstance();
 		Window win = mc.getWindow();
-		if (!mc.mouseHandler.isLeftPressed()) {
+		// Ask SDL directly: MouseHandler.isLeftPressed() only updates while no screen is open, so it
+		// reads false for the whole drag while the chat bar is up.
+		if ((SDLMouse.SDL_GetMouseState(null, null) & SDLMouse.SDL_BUTTON_LMASK) == 0) {
 			dragging = false;
 			WindowConfig.setFraction(window, fx, fy);
 			return;

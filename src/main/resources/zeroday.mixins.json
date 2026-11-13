@@ -3,7 +3,12 @@
 	"package": "com.xybakaqaq.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
+		"AbstractButtonMixin",
 		"AbstractContainerScreenMixin",
+		"AbstractSelectionListMixin",
+		"AbstractSliderButtonAccessor",
+		"AbstractSliderButtonMixin",
+		"AbstractStringWidgetMixin",
 		"ChatComponentAccessor",
 		"ChatComponentMixin",
 		"ChatScreenMixin",
@@ -11,15 +16,18 @@
 		"ClientLevelMixin",
 		"CommandSuggestionsMixin",
 		"ContextualBarMixin",
+		"FocusableTextWidgetMixin",
 		"GuiGraphicsExtractorMixin",
 		"HudMixin",
 		"ItemInHandRendererMixin",
 		"KeyboardHandlerMixin",
+		"LevelLoadingScreenMixin",
 		"LevelMixin",
 		"LightmapRenderStateExtractorMixin",
 		"MinecraftMixin",
 		"MultiPlayerGameModeMixin",
-		"TitleScreenMixin"
+		"TitleScreenMixin",
+		"WinScreenAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -133,19 +133,9 @@ public final class MenuListPage {
 		if (list != null) {
 			list.extractWidgetRenderState(graphics, mouseX, mouseY, partialTick);
 		}
-		// The search box keeps all of its vanilla input handling; only the pixels are ours. No frame:
-		// the text sits straight on the backdrop, with a hairline underline that turns into a red bar
-		// while the field has focus.
+		// The search box keeps all of its vanilla input handling; only the pixels are ours.
 		if (search != null) {
-			MenuTextField.draw(graphics, search);
-			int x = search.getX();
-			int lineY = search.getY() + search.getHeight() - 1;
-			int lineW = search.getWidth();
-			float focus = MenuAnimation.hover(search, search.isFocused());
-			Sdf.roundRect(graphics, x, lineY, lineW, 1, 0, 0x33FFFFFF);
-			if (focus > 0.01f) {
-				Sdf.roundRect(graphics, x, lineY - 1, Math.max(1, Math.round(lineW * focus)), 2, 0, alpha(ACCENT, focus));
-			}
+			MenuTextField.drawField(graphics, search);
 		}
 		if (sliding) {
 			graphics.pose().popMatrix();

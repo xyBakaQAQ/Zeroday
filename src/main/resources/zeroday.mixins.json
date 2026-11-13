@@ -17,6 +17,7 @@
 		"CommandSuggestionsMixin",
 		"ContextualBarMixin",
 		"EditBoxAccessor",
+		"EditBoxMixin",
 		"FocusableTextWidgetMixin",
 		"GuiGraphicsExtractorMixin",
 		"HudMixin",

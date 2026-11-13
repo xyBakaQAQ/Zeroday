@@ -21,12 +21,14 @@ import net.minecraft.client.renderer.RenderPipelines;
 // Skija text field content: value or hint, selection, horizontal scroll and the caret. The vanilla
 // EditBox still owns all input handling; only its pixels are replaced. One small texture is cached and
 // re-baked only when the text/cursor/selection changes, so typing never re-bakes the whole page.
-final class MenuTextField {
+public final class MenuTextField {
 
 	private static final int TEXT = 0xFFE8E8EA;
 	private static final int HINT = 0xFF8A8A92;
 	private static final int SELECTION = 0x50C20C0C;
 	private static final int CARET = 0xFFC20C0C;
+	private static final int RULE = 0x33FFFFFF;
+	private static final int ACCENT = 0xFFC20C0C;
 	private static final long BLINK_MS = 900L;
 
 	private static final SkijaBridge bridge = new SkijaBridge("menu_text_field");
@@ -35,6 +37,26 @@ final class MenuTextField {
 	private static final float[] caret = { -1f };
 
 	private MenuTextField() {
+	}
+
+	// The field as the custom pages show it: no frame, just the text on the backdrop with a hairline
+	// underline that turns into an accent bar while the field has focus.
+	public static void drawField(GuiGraphicsExtractor graphics, EditBox box) {
+		draw(graphics, box);
+		int x = box.getX();
+		int lineY = box.getY() + box.getHeight() - 1;
+		int lineW = box.getWidth();
+		float focus = MenuAnimation.hover(box, box.isFocused());
+		Sdf.roundRect(graphics, x, lineY, lineW, 1, 0, RULE);
+		if (focus > 0.01f) {
+			Sdf.roundRect(graphics, x, lineY - 1, Math.max(1, Math.round(lineW * focus)), 2, 0,
+					alpha(ACCENT, focus));
+		}
+	}
+
+	private static int alpha(int color, float factor) {
+		int a = Math.round((color >>> 24) * Math.max(0f, Math.min(1f, factor)));
+		return (a << 24) | (color & 0xFFFFFF);
 	}
 
 	static void draw(GuiGraphicsExtractor graphics, EditBox box) {

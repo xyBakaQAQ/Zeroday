@@ -19,6 +19,32 @@ public final class TargetUtil {
 
 
 	public static boolean isValid(Entity entity) {
+		return isValid(entity, ModuleManager.get(Target.class));
+	}
+
+	public static LivingEntity getNearest(double range) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null || mc.level == null) {
+			return null;
+		}
+		// Read the module once instead of once per entity.
+		Target target = ModuleManager.get(Target.class);
+		LivingEntity best = null;
+		double bestDistance = range;
+		for (Entity entity : mc.level.entitiesForRendering()) {
+			if (!isValid(entity, target)) {
+				continue;
+			}
+			double distance = mc.player.distanceTo(entity);
+			if (distance <= bestDistance) {
+				bestDistance = distance;
+				best = (LivingEntity) entity;
+			}
+		}
+		return best;
+	}
+
+	private static boolean isValid(Entity entity, Target target) {
 		if (!(entity instanceof LivingEntity living)) {
 			return false;
 		}
@@ -27,7 +53,6 @@ public final class TargetUtil {
 			return false;
 		}
 
-		Target target = ModuleManager.get(Target.class);
 		boolean players = target == null || target.players();
 		boolean animals = target != null && target.animals();
 		boolean mobs = target == null || target.mobs();
@@ -51,26 +76,5 @@ public final class TargetUtil {
 			return animals;
 		}
 		return false;
-	}
-
-
-	public static LivingEntity getNearest(double range) {
-		Minecraft mc = Minecraft.getInstance();
-		if (mc.player == null || mc.level == null) {
-			return null;
-		}
-		LivingEntity best = null;
-		double bestDistance = range;
-		for (Entity entity : mc.level.entitiesForRendering()) {
-			if (!isValid(entity)) {
-				continue;
-			}
-			double distance = mc.player.distanceTo(entity);
-			if (distance <= bestDistance) {
-				bestDistance = distance;
-				best = (LivingEntity) entity;
-			}
-		}
-		return best;
 	}
 }

@@ -1,5 +1,7 @@
 package com.xybakaqaq.utils;
 
+import java.util.ArrayDeque;
+
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.pipeline.BlendFunction;
@@ -56,7 +58,7 @@ public final class Sdf {
 
 	// Mirrors GuiGraphicsExtractor's own scissor stack (which has no public accessor) so panels drawn
 	// inside a list are clipped like vanilla elements instead of bleeding past its edges.
-	private static final java.util.ArrayDeque<ScreenRectangle> SCISSORS = new java.util.ArrayDeque<>();
+	private static final ArrayDeque<ScreenRectangle> SCISSORS = new ArrayDeque<>();
 
 	public static void pushScissor(ScreenRectangle rect) {
 		if (SCISSORS.size() < 64) {

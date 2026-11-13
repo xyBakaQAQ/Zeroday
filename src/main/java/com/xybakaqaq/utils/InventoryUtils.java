@@ -1,8 +1,6 @@
 package com.xybakaqaq.utils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -33,7 +31,10 @@ import net.minecraft.world.item.equipment.Equippable;
 // (Yarn 1.21.4) to the Mojang-mapped 26.2 APIs, keeping only what the visual highlight needs.
 public final class InventoryUtils {
 
-	private static final Set<Item> CLEANER_WHITELIST = new HashSet<>(Arrays.asList(
+	// Damage samples the armor score averages its reduction over.
+	private static final double[] TEST_DAMAGES = {4.0D, 8.0D, 12.0D, 16.0D, 20.0D};
+
+	private static final Set<Item> CLEANER_WHITELIST = Set.of(
 			Items.ENDER_PEARL, Items.ENDER_EYE, Items.TRIDENT, Items.MACE, Items.TNT,
 			Items.BOW, Items.CROSSBOW, Items.ARROW,
 			Items.GOLDEN_APPLE, Items.ENCHANTED_GOLDEN_APPLE, Items.APPLE,
@@ -47,9 +48,9 @@ public final class InventoryUtils {
 			Items.DRIED_KELP, Items.COMPASS, Items.RECOVERY_COMPASS,
 			Items.WATER_BUCKET, Items.ELYTRA, Items.FLINT_AND_STEEL,
 			Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND,
-			Items.EMERALD, Items.NETHERITE_INGOT));
+			Items.EMERALD, Items.NETHERITE_INGOT);
 
-	private static final Set<Item> BLOCK_BLACKLIST = new HashSet<>(Arrays.asList(
+	private static final Set<Item> BLOCK_BLACKLIST = Set.of(
 			Items.TNT, Items.SAND, Items.RED_SAND, Items.GRAVEL,
 			Items.CHEST, Items.TRAPPED_CHEST, Items.ENDER_CHEST, Items.BARREL,
 			Items.HOPPER, Items.DISPENSER, Items.DROPPER,
@@ -58,7 +59,7 @@ public final class InventoryUtils {
 			Items.GRINDSTONE, Items.SMITHING_TABLE, Items.CARTOGRAPHY_TABLE,
 			Items.FLETCHING_TABLE, Items.LOOM, Items.STONECUTTER,
 			Items.ANVIL, Items.CHIPPED_ANVIL, Items.DAMAGED_ANVIL, Items.DRAGON_EGG,
-			Items.SUSPICIOUS_SAND, Items.SUSPICIOUS_GRAVEL));
+			Items.SUSPICIOUS_SAND, Items.SUSPICIOUS_GRAVEL);
 
 	private InventoryUtils() {
 	}
@@ -66,7 +67,7 @@ public final class InventoryUtils {
 	public static String getItemCategory(ItemStack stack) {
 		Item item = stack.getItem();
 		Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
-		if (isArmor(stack) && equippable != null) {
+		if (isArmor(stack, equippable)) {
 			return "armor_" + equippable.slot().getName();
 		}
 		if (stack.is(ItemTags.SWORDS)) {
@@ -138,7 +139,10 @@ public final class InventoryUtils {
 	}
 
 	public static boolean isArmor(ItemStack stack) {
-		Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
+		return isArmor(stack, stack.get(DataComponents.EQUIPPABLE));
+	}
+
+	private static boolean isArmor(ItemStack stack, Equippable equippable) {
 		if (equippable == null || !isArmorSlot(equippable.slot())) {
 			return false;
 		}
@@ -196,12 +200,11 @@ public final class InventoryUtils {
 		double armor = getAttributeValue(stack, Attributes.ARMOR);
 		double toughness = getAttributeValue(stack, Attributes.ARMOR_TOUGHNESS);
 		int protection = getEnchantmentLevel(player, stack, Enchantments.PROTECTION);
-		double[] testDamages = {4.0D, 8.0D, 12.0D, 16.0D, 20.0D};
 		double totalReduction = 0.0D;
-		for (double damage : testDamages) {
+		for (double damage : TEST_DAMAGES) {
 			totalReduction += damageReduction(armor, toughness, damage);
 		}
-		double averageReduction = totalReduction / testDamages.length;
+		double averageReduction = totalReduction / TEST_DAMAGES.length;
 		return Math.min(0.80D, averageReduction + protection * 0.04D) * 100.0D;
 	}
 

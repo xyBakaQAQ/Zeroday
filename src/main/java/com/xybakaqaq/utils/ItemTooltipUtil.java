@@ -6,11 +6,9 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
@@ -23,7 +21,6 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 // </ul>
 // All lines are white. Armor is not shown. Axes are treated as weapons so they show attack
 // damage rather than the "Tools" label.
-@SuppressWarnings("deprecation") // built-in registry / block-state accessors carry Mojang's soft-deprecation
 public final class ItemTooltipUtil {
 
 	// A ready-to-draw stat line plus its base RGB colour (alpha applied by the caller).
@@ -46,8 +43,9 @@ public final class ItemTooltipUtil {
 		if (isMiningTool(stack)) {
 			return new StatLine("Tools", WHITE);
 		}
-		if (attributeAmount(stack, Attributes.ATTACK_DAMAGE) != 0) {
-			return new StatLine("+" + fmt(attackDamage(stack)) + " Attack Damage", WHITE);
+		double bonus = InventoryUtils.getAttributeValue(stack, Attributes.ATTACK_DAMAGE);
+		if (bonus != 0.0) {
+			return new StatLine("+" + fmt(attackDamage(stack, bonus)) + " Attack Damage", WHITE);
 		}
 		return null;
 	}
@@ -59,23 +57,10 @@ public final class ItemTooltipUtil {
 		return item.is(ItemTags.PICKAXES) || item.is(ItemTags.SHOVELS) || item.is(ItemTags.HOES);
 	}
 
-	private static double attackDamage(ItemStack stack) {
-		double base = 1.0 + attributeAmount(stack, Attributes.ATTACK_DAMAGE);
+	private static double attackDamage(ItemStack stack, double bonus) {
+		double base = 1.0 + bonus;
 		int sharpness = enchantLevel(stack, Enchantments.SHARPNESS);
 		return base + (sharpness > 0 ? sharpness * 0.5 + 0.5 : 0.0);
-	}
-
-	private static double attributeAmount(ItemStack stack, Holder<Attribute> attribute) {
-		ItemAttributeModifiers mods = stack.get(DataComponents.ATTRIBUTE_MODIFIERS);
-		if (mods == null) {
-			return 0.0;
-		}
-		for (ItemAttributeModifiers.Entry entry : mods.modifiers()) {
-			if (entry.attribute().is(attribute)) {
-				return entry.modifier().amount();
-			}
-		}
-		return 0.0;
 	}
 
 	private static int enchantLevel(ItemStack stack, ResourceKey<Enchantment> key) {

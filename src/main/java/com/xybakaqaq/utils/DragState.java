@@ -24,11 +24,9 @@ public final class DragState {
 	private double dragOffX;
 	private double dragOffY;
 
-	// panel's top-left corner + last drawn rect, for rendering and click hit-testing
+	// panel's top-left corner + last drawn size, for rendering and click hit-testing
 	private int x;
 	private int y;
-	private int lastX;
-	private int lastY;
 	private int lastW;
 	private int lastH;
 
@@ -62,15 +60,13 @@ public final class DragState {
 		fy = clamp(fy, 0.0, 1.0);
 		x = (int) Math.round(fx * rangeX);
 		y = (int) Math.round(fy * rangeY);
-		lastX = x;
-		lastY = y;
 		lastW = panelW;
 		lastH = panelH;
 	}
 
 	// Begins a drag if the left button presses inside the last drawn rect.
 	public boolean mouseClicked(double mx, double my, int button) {
-		if (button == SDL_BUTTON_LEFT && mx >= lastX && mx < lastX + lastW && my >= lastY && my < lastY + lastH) {
+		if (button == SDL_BUTTON_LEFT && mx >= x && mx < x + lastW && my >= y && my < y + lastH) {
 			dragging = true;
 			dragOffX = mx - x;
 			dragOffY = my - y;
@@ -86,7 +82,7 @@ public final class DragState {
 		// reads false for the whole drag while the chat bar is up.
 		if ((SDLMouse.SDL_GetMouseState(null, null) & SDLMouse.SDL_BUTTON_LMASK) == 0) {
 			dragging = false;
-			WindowConfig.setFraction(window, fx, fy);
+			WindowConfig.setFraction(window, clamp(fx, 0.0, 1.0), clamp(fy, 0.0, 1.0));
 			return;
 		}
 		double mx = mc.mouseHandler.xpos() * win.getGuiScaledWidth() / win.getScreenWidth();

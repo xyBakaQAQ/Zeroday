@@ -12,7 +12,8 @@ import com.xybakaqaq.modules.settings.ModeSetting;
 // style.
 // <ul>
 // <li>ArrayList — enabled modules, draggable (default top-right). Default on.</li>
-// <li>Hotbar — off (vanilla) or zeroday (custom). Default zeroday.</li>
+// <li>Hotbar — off (vanilla), zeroday (magnified dock) or hanabi (flat bottom strip).
+// Default hanabi.</li>
 // <li>Potions — custom potion display (suppresses vanilla), draggable (default bottom-right).</li>
 // </ul>
 // The actual rendering lives in the gui.arraylist / gui.potions widgets; this module
@@ -23,7 +24,7 @@ public class HUD extends Module {
 	private static final int ARRAYLIST_ROW_H = 13;
 
 	private final BooleanSetting arrayList = new BooleanSetting("ArrayList", true);
-	private final ModeSetting hotbar = new ModeSetting("Hotbar", "zeroday", "off", "zeroday");
+	private final ModeSetting hotbar = new ModeSetting("Hotbar", "hanabi", "off", "zeroday", "hanabi");
 	private final BooleanSetting potions = new BooleanSetting("Potions", true);
 	private final BooleanSetting inventory = new BooleanSetting("Inventory", false);
 
@@ -42,6 +43,11 @@ public class HUD extends Module {
 
 	public boolean isHotbarZeroday() {
 		return hotbar.is("zeroday");
+	}
+
+	// The flat Hanabi-style strip, drawn in the vanilla hotbar's place.
+	public boolean isHotbarHanabi() {
+		return hotbar.is("hanabi");
 	}
 
 

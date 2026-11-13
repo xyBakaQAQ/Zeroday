@@ -3,14 +3,15 @@ package com.xybakaqaq.utils;
 import com.xybakaqaq.modules.ModuleManager;
 import com.xybakaqaq.modules.render.HUD;
 
-// Shared HUD layout constants for the Zeroday hotbar.
+// Shared HUD layout constants for the custom hotbars.
 // The Zeroday-style hotbar floats above the health bar, leaving the bottom strip (where
 // the vanilla hotbar used to sit) empty. To fill it, the vanilla status bars — health,
 // armor, food, air, vehicle health and the contextual (experience/jump) bar — are nudged
 // downward by #STATUS_OFFSET pixels. The mixins do this by feeding the screen
 // height through #shiftDown(int) wherever a status bar anchors to the bottom.
-// The shift is only applied while the Zeroday hotbar is actually active; with the Hotbar
-// set to off the vanilla hotbar and the status bars stay in their normal positions.
+// The shift is only applied while the Zeroday hotbar is active; the Hanabi strip occupies the
+// vanilla hotbar's own strip, and with the Hotbar set to off the vanilla hotbar and the status
+// bars stay in their normal positions.
 public final class HudLayout {
 
 	// Downward shift, in scaled-GUI pixels, applied to the vanilla status bars.
@@ -27,6 +28,6 @@ public final class HudLayout {
 
 	private static int offset() {
 		HUD hud = ModuleManager.get(HUD.class);
-		return hud == null || hud.isHotbarZeroday() ? STATUS_OFFSET : 0;
+		return hud != null && hud.isHotbarZeroday() ? STATUS_OFFSET : 0;
 	}
 }

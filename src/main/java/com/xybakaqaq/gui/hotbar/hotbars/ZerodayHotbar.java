@@ -18,15 +18,12 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * Zeroday-style hotbar: a frameless, magnified "dock" of item icons floating above the
- * health bar. The selected slot is enlarged (with nearby slots scaling down smoothly);
- * empty slots show their number 1-9. Item count/durability decorations are kept.
- *
- * <p>Layout and easing live in {@link HotbarLayout}; this class only does the drawing.
- * Drawn through {@link HotbarManager#onExtractHotbar} via the {@code Hud} mixin; returns
- * {@code true} so the vanilla hotbar is cancelled.
- */
+// Zeroday-style hotbar: a frameless, magnified "dock" of item icons floating above the
+// health bar. The selected slot is enlarged (with nearby slots scaling down smoothly);
+// empty slots show their number 1-9. Item count/durability decorations are kept.
+// Layout and easing live in HotbarLayout; this class only does the drawing.
+// Drawn through HotbarManager#onExtractHotbar via the Hud mixin; returns
+// true so the vanilla hotbar is cancelled.
 public class ZerodayHotbar extends Hotbar {
 
 	private static final int ICON = 16;
@@ -69,10 +66,8 @@ public class ZerodayHotbar extends Hotbar {
 		return true; // vanilla hotbar replaced
 	}
 
-	/**
-	 * Draws the held-item name above the selected slot (following it as it slides, fading with
-	 * the highlight timer) plus a colored stat line below it — the Zeroday tooltip.
-	 */
+	// Draws the held-item name above the selected slot (following it as it slides, fading with
+	// the highlight timer) plus a colored stat line below it — the Zeroday tooltip.
 	@Override
 	public boolean extractSelectedItemName(GuiGraphicsExtractor graphics, ItemStack stack, int timer) {
 		if (!isHotbarEnabled()) {
@@ -121,17 +116,15 @@ public class ZerodayHotbar extends Hotbar {
 		return true;
 	}
 
-	/** @return whether the Zeroday hotbar style is active (HUD module's Hotbar mode = zeroday). */
+
 	private static boolean isHotbarEnabled() {
 		HUD hud = ModuleManager.get(HUD.class);
 		return hud == null || hud.isHotbarZeroday();
 	}
 
-	/**
-	 * Draws one slot, scaled about its bottom-centre so enlarged icons grow upward and stay
-	 * horizontally centred. {@code slot} is the inventory index (1-9 label = slot + 1); pass
-	 * a negative slot for the offhand (no empty-number fallback).
-	 */
+	// Draws one slot, scaled about its bottom-centre so enlarged icons grow upward and stay
+	// horizontally centred. slot is the inventory index (1-9 label = slot + 1); pass
+	// a negative slot for the offhand (no empty-number fallback).
 	private void drawSlot(GuiGraphicsExtractor graphics, Player player,
 			ItemStack stack, int slot, int centerX, int bottomY, float scale) {
 		int itemX = centerX - ICON / 2;
@@ -155,14 +148,14 @@ public class ZerodayHotbar extends Hotbar {
 		graphics.pose().popMatrix();
 	}
 
-	/** Y of the icon bottom edge: a few px above the health bar, raised for extra heart rows. */
+	// Y of the icon bottom edge: a few px above the health bar, raised for extra heart rows.
 	private static int baselineBottom(GuiGraphicsExtractor graphics, Player player) {
 		int healthLineTop = graphics.guiHeight() - 39; // vanilla health row top
 		int extraRows = heartRows(player) - 1;
 		return healthLineTop - extraRows * 9 - GAP_ABOVE_HEALTH;
 	}
 
-	/** Number of heart rows the vanilla health bar would occupy (10 hearts / 20 hp per row). */
+	// Number of heart rows the vanilla health bar would occupy (10 hearts / 20 hp per row).
 	private static int heartRows(Player player) {
 		float hp = Math.max(player.getMaxHealth(), player.getHealth() + player.getAbsorptionAmount());
 		int hearts = (int) Math.ceil(hp / 2.0);

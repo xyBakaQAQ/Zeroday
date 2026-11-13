@@ -18,11 +18,9 @@ import com.xybakaqaq.modules.settings.NumberSetting;
 import com.xybakaqaq.modules.settings.Setting;
 import com.xybakaqaq.utils.KeyUtils;
 
-/**
- * Persists each module's on/off state, keybind and settings to {@code config.json}. {@link #load()}
- * applies the saved values to the registered modules, then wires auto-save: any later change (toggle,
- * rebind, setting change) calls {@link #save()} via {@link ModuleManager#notifyChanged()}.
- */
+// Persists each module's on/off state, keybind and settings to config.json. #load()
+// applies the saved values to the registered modules, then wires auto-save: any later change (toggle,
+// rebind, setting change) calls #save() via ModuleManager#notifyChanged().
 public final class ModuleConfig {
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -30,7 +28,7 @@ public final class ModuleConfig {
 	private ModuleConfig() {
 	}
 
-	/** Loads saved state onto the (already registered) modules, then enables auto-save. */
+	// Loads saved state onto the (already registered) modules, then enables auto-save.
 	public static void load() {
 		try {
 			Path file = Config.configFile();
@@ -70,7 +68,7 @@ public final class ModuleConfig {
 		ModuleManager.setChangeListener(ModuleConfig::save);
 	}
 
-	/** Writes the current state of every module to {@code config.json}. */
+	// Writes the current state of every module to config.json.
 	public static void save() {
 		try {
 			JsonObject modules = new JsonObject();

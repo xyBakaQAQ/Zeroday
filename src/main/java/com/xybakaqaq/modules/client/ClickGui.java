@@ -6,10 +6,8 @@ import com.xybakaqaq.gui.clickgui.ClickGuiScreen;
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
 
-/**
- * Toggles the Skija-rendered ClickGUI (default Right Shift). Acts as a trigger: the key opens the
- * screen if it isn't showing, or closes it if it is.
- */
+// Toggles the Skija-rendered ClickGUI (default Right Shift). Acts as a trigger: the key opens the
+// screen if it isn't showing, or closes it if it is.
 public final class ClickGui extends Module {
 
 	public ClickGui() {

@@ -10,10 +10,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Reports the {@link Environment} rain / thunder levels for the <b>client</b> level only (guarded by
- * {@code this == mc.level}), so the integrated server's weather logic stays untouched.
- */
+// Reports the Environment rain / thunder levels for the client level only (guarded by
+// this == mc.level), so the integrated server's weather logic stays untouched.
 @Mixin(Level.class)
 public class LevelMixin {
 

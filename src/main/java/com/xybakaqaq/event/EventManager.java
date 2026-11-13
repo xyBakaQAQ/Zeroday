@@ -7,13 +7,10 @@ import com.xybakaqaq.event.features.TickEvent;
 import com.xybakaqaq.modules.Module;
 import com.xybakaqaq.modules.ModuleManager;
 
-/**
- * Posts events directly to every {@link Module} (each is an {@link EventListener}). Mixins call
- * the {@code onX} helpers; {@link #post(Event)} then visits each module via {@link Event#call}.
- *
- * <p>Keyboard events reach all modules (so a disabled module can still see its toggle key);
- * other events only reach enabled modules.
- */
+// Posts events directly to every Module (each is an EventListener). Mixins call
+// the onX helpers; #post(Event) then visits each module via Event#call.
+// Keyboard events reach all modules (so a disabled module can still see its toggle key);
+// other events only reach enabled modules.
 public final class EventManager {
 
 	private static final TickEvent TICK_EVENT = new TickEvent();
@@ -21,7 +18,7 @@ public final class EventManager {
 	private EventManager() {
 	}
 
-	/** Called once from the main mod class. */
+	// Called once from the main mod class.
 	public static void init() {
 		Zeroday.LOGGER.info("EventManager initialized");
 	}

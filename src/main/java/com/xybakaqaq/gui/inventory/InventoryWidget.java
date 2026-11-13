@@ -14,11 +14,9 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * The Skija-rendered inventory overlay: the player's main storage (slots 9–35, the 9×3 grid above the
- * hotbar — the hotbar itself is excluded). The cell grid is drawn with Skija; the item models + counts
- * are rendered by the game on top. Draggable while the chat bar is open; position persisted.
- */
+// The Skija-rendered inventory overlay: the player's main storage (slots 9–35, the 9×3 grid above the
+// hotbar — the hotbar itself is excluded). The cell grid is drawn with Skija; the item models + counts
+// are rendered by the game on top. Draggable while the chat bar is open; position persisted.
 public final class InventoryWidget {
 
 	private static final String WINDOW = "inventory";
@@ -91,7 +89,7 @@ public final class InventoryWidget {
 		}
 	}
 
-	/** Begins a drag if the left button presses inside the panel. */
+	// Begins a drag if the left button presses inside the panel.
 	public static boolean mouseClicked(double mx, double my, int button) {
 		return drag.mouseClicked(mx, my, button);
 	}

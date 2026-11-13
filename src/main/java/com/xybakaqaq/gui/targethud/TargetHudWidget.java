@@ -30,15 +30,12 @@ import net.minecraft.world.entity.LivingEntity;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-/**
- * The Skija-rendered target HUD widget: head (players) + name + an animated health bar. The target is
- * the entity you are looking at (crosshair) or most recently attacked — both feed it — kept while alive
- * and within the module's distance; with no target, your own info is shown while the chat bar is open.
- *
- * <p>Animated: smooth health bar; a <b>hurt punch</b> when the target loses health (the head shrinks
- * and flashes red, the panel flashes); and a <b>fade-up</b> on appear / disappear (using cached data so
- * it can keep fading even after the target is gone). Rendered at the physical framebuffer resolution.
- */
+// The Skija-rendered target HUD widget: head (players) + name + an animated health bar. The target is
+// the entity you are looking at (crosshair) or most recently attacked — both feed it — kept while alive
+// and within the module's distance; with no target, your own info is shown while the chat bar is open.
+// Animated: smooth health bar; a hurt punch when the target loses health (the head shrinks
+// and flashes red, the panel flashes); and a fade-up on appear / disappear (using cached data so
+// it can keep fading even after the target is gone). Rendered at the physical framebuffer resolution.
 public final class TargetHudWidget {
 
 	private static final int H = 46;
@@ -73,7 +70,7 @@ public final class TargetHudWidget {
 	private TargetHudWidget() {
 	}
 
-	/** Called from the attack mixin: remembers the entity the player just hit. */
+	// Called from the attack mixin: remembers the entity the player just hit.
 	public static void onAttack(Entity entity) {
 		CombatTarget.onAttack(entity);
 	}
@@ -219,7 +216,7 @@ public final class TargetHudWidget {
 		graphics.entity(renderState, size, translation, rotation, null, boxX, boxY, boxX + HEAD, boxY + HEAD);
 	}
 
-	/** Begins a drag if the left button presses inside the widget. */
+	// Begins a drag if the left button presses inside the widget.
 	public static boolean mouseClicked(double mx, double my, int button) {
 		return drag.mouseClicked(mx, my, button);
 	}

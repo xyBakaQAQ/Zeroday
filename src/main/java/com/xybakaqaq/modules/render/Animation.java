@@ -25,12 +25,10 @@ import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
-/**
- * Legacy first-person combat animations: holding right-click with a sword (or axe, optionally) shows
- * an old-style block pose. The {@code Mode} setting picks the style — Sigma / Old / Astra / Slide /
- * Swank — handled in {@link com.xybakaqaq.mixin.ItemInHandRendererMixin}. Looking at an interactive
- * block (chest, door, etc.) suppresses the pose so you can still use it.
- */
+// Legacy first-person combat animations: holding right-click with a sword (or axe, optionally) shows
+// an old-style block pose. The Mode setting picks the style — Sigma / Old / Astra / Slide /
+// Swank — handled in com.xybakaqaq.mixin.ItemInHandRendererMixin. Looking at an interactive
+// block (chest, door, etc.) suppresses the pose so you can still use it.
 public final class Animation extends Module {
 
 	private final ModeSetting mode = new ModeSetting("Mode", "Sigma", "Sigma", "Old", "Astra", "Slide", "Swank");
@@ -66,15 +64,12 @@ public final class Animation extends Module {
 		return autoBlock.isEnabled();
 	}
 
-	/** @return whether {@code stack} is a weapon the block pose applies to (sword, or axe when enabled). */
+
 	public boolean isWeapon(ItemStack stack) {
 		return stack.is(ItemTags.SWORDS) || (axes.isEnabled() && stack.is(ItemTags.AXES));
 	}
 
-	/**
-	 * @return whether the block pose should currently show: right-click held — or Autoblock engaged by a
-	 *         combat target (aim/attack) — and not aiming at an interactive block (so chests / doors work).
-	 */
+	// combat target (aim/attack) — and not aiming at an interactive block (so chests / doors work).
 	public static boolean blocking() {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.level == null) {

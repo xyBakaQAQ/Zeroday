@@ -3,7 +3,7 @@ package com.xybakaqaq.event.features;
 import com.xybakaqaq.event.Event;
 import com.xybakaqaq.event.EventListener;
 
-/** Posted for a raw GLFW key event ({@code key} = GLFW key code, {@code action} = GLFW action). */
+// Posted for a raw GLFW key event (key = GLFW key code, action = GLFW action).
 public final class KeyboardEvent extends Event {
 
 	private final int key;

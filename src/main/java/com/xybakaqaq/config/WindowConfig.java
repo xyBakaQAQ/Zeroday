@@ -8,10 +8,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-/**
- * Persists on-screen window positions to {@code windows.json}, keyed by a window name (e.g.
- * {@code "arraylist"}). Loaded lazily on first access; {@link #set} writes through immediately.
- */
+// Persists on-screen window positions to windows.json, keyed by a window name (e.g.
+// "arraylist"). Loaded lazily on first access; #set writes through immediately.
 public final class WindowConfig {
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -29,7 +27,7 @@ public final class WindowConfig {
 		return read(name, "y", fallback);
 	}
 
-	/** Stores and persists a window's position. */
+	// Stores and persists a window's position.
 	public static void set(String name, int x, int y) {
 		JsonObject root = root();
 		JsonObject entry = root.has(name) ? root.getAsJsonObject(name) : new JsonObject();
@@ -39,11 +37,9 @@ public final class WindowConfig {
 		save(root);
 	}
 
-	/**
-	 * Reads a fractional position component (0..1 along the free travel range, stored under
-	 * {@code "fx"}/{@code "fy"} by {@link #setFraction}). Falls back to {@code fallback} when absent
-	 * (e.g. only a legacy absolute {@code "x"}/{@code "y"} exists).
-	 */
+	// Reads a fractional position component (0..1 along the free travel range, stored under
+	// "fx"/"fy" by #setFraction). Falls back to fallback when absent
+	// (e.g. only a legacy absolute "x"/"y" exists).
 	public static double getFraction(String name, String key, double fallback) {
 		JsonObject root = root();
 		if (root.has(name)) {
@@ -55,7 +51,7 @@ public final class WindowConfig {
 		return fallback;
 	}
 
-	/** Stores and persists a window's fractional position (gui-scale independent). */
+	// Stores and persists a window's fractional position (gui-scale independent).
 	public static void setFraction(String name, double fx, double fy) {
 		JsonObject root = root();
 		JsonObject entry = root.has(name) ? root.getAsJsonObject(name) : new JsonObject();

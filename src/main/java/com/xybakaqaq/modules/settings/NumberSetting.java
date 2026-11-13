@@ -1,9 +1,7 @@
 package com.xybakaqaq.modules.settings;
 
-/**
- * A numeric setting bounded to {@code [min, max]} and snapped to {@code step}. Rendered as a slider
- * in the ClickGUI.
- */
+// A numeric setting bounded to [min, max] and snapped to step. Rendered as a slider
+// in the ClickGUI.
 public class NumberSetting extends Setting<Double> {
 
 	private final double min;
@@ -29,7 +27,7 @@ public class NumberSetting extends Setting<Double> {
 		return step;
 	}
 
-	/** Clamps to {@code [min, max]}, snaps to the nearest {@code step}, then stores. */
+	// Clamps to [min, max], snaps to the nearest step, then stores.
 	public void setNumber(double value) {
 		double clamped = Math.max(min, Math.min(max, value));
 		double snapped = min + Math.round((clamped - min) / step) * step;

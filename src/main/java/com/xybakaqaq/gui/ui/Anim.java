@@ -1,10 +1,8 @@
 package com.xybakaqaq.gui.ui;
 
-/**
- * An animated {@code float} that eases toward a target each frame (frame-rate independent
- * exponential smoothing). Set a new target with {@link #set}, advance with {@link #update}, read the
- * eased value with {@link #value}. Used for hover/press/expand transitions on components.
- */
+// An animated float that eases toward a target each frame (frame-rate independent
+// exponential smoothing). Set a new target with #set, advance with #update, read the
+// eased value with #value. Used for hover/press/expand transitions on components.
 public final class Anim {
 
 	private float value;
@@ -16,7 +14,7 @@ public final class Anim {
 		this.target = initial;
 	}
 
-	/** Higher = snappier. Default 14. */
+	// Higher = snappier. Default 14.
 	public Anim speed(float speed) {
 		this.speed = speed;
 		return this;
@@ -39,7 +37,7 @@ public final class Anim {
 		return target;
 	}
 
-	/** Advances by {@code dt} seconds toward the target. */
+	// Advances by dt seconds toward the target.
 	public void update(float dt) {
 		float t = 1f - (float) Math.exp(-speed * dt);
 		value += (target - value) * t;

@@ -14,11 +14,9 @@ import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 
-/**
- * Colors the crosshair by whatever you are aiming at: a player (red), a hostile mob, an animal, or
- * the default color when aiming at nothing. Drawn by {@link com.xybakaqaq.mixin.HudCrosshairMixin},
- * which replaces the vanilla crosshair while this module is enabled.
- */
+// Colors the crosshair by whatever you are aiming at: a player (red), a hostile mob, an animal, or
+// the default color when aiming at nothing. Drawn by com.xybakaqaq.mixin.HudCrosshairMixin,
+// which replaces the vanilla crosshair while this module is enabled.
 public final class Crosshair extends Module {
 
 	private final ColorSetting playerColor = new ColorSetting("Player", 0xFFFF4040);
@@ -43,7 +41,7 @@ public final class Crosshair extends Module {
 		return defaultColor.getColor();
 	}
 
-	/** Draws the colored crosshair at the screen center. Called from the HUD mixin. */
+	// Draws the colored crosshair at the screen center. Called from the HUD mixin.
 	public static void render(GuiGraphicsExtractor graphics) {
 		Crosshair module = ModuleManager.get(Crosshair.class);
 		if (module == null) {

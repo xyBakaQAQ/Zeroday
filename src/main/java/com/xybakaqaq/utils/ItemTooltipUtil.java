@@ -15,21 +15,18 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 
-/**
- * Computes the stat line shown under the held-item name:
- * <ul>
- *   <li>food → a plain "Foods" label</li>
- *   <li>mining tools (pickaxe / shovel / hoe) → a plain "Tools" label</li>
- *   <li>weapons and axes → attack damage</li>
- * </ul>
- *
- * All lines are white. Armor is not shown. Axes are treated as weapons so they show attack
- * damage rather than the "Tools" label.
- */
+// Computes the stat line shown under the held-item name:
+// <ul>
+// <li>food → a plain "Foods" label</li>
+// <li>mining tools (pickaxe / shovel / hoe) → a plain "Tools" label</li>
+// <li>weapons and axes → attack damage</li>
+// </ul>
+// All lines are white. Armor is not shown. Axes are treated as weapons so they show attack
+// damage rather than the "Tools" label.
 @SuppressWarnings("deprecation") // built-in registry / block-state accessors carry Mojang's soft-deprecation
 public final class ItemTooltipUtil {
 
-	/** A ready-to-draw stat line plus its base RGB colour (alpha applied by the caller). */
+	// A ready-to-draw stat line plus its base RGB colour (alpha applied by the caller).
 	public record StatLine(String text, int rgb) {
 	}
 
@@ -38,7 +35,7 @@ public final class ItemTooltipUtil {
 	private ItemTooltipUtil() {
 	}
 
-	/** Stat line for the held item, or {@code null} if it has no notable stat. */
+	// Stat line for the held item, or null if it has no notable stat.
 	public static StatLine statLine(ItemStack stack) {
 		if (stack.isEmpty()) {
 			return null;
@@ -55,10 +52,8 @@ public final class ItemTooltipUtil {
 		return null;
 	}
 
-	/**
-	 * True for pickaxes, shovels and hoes. 26.3's tools are data-driven, so they're identified by
-	 * their item tags; axes are not in this set and fall through to the attack-damage line.
-	 */
+	// True for pickaxes, shovels and hoes. 26.3's tools are data-driven, so they're identified by
+	// their item tags; axes are not in this set and fall through to the attack-damage line.
 	private static boolean isMiningTool(ItemStack stack) {
 		Holder<Item> item = stack.typeHolder();
 		return item.is(ItemTags.PICKAXES) || item.is(ItemTags.SHOVELS) || item.is(ItemTags.HOES);

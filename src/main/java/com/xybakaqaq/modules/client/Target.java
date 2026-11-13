@@ -6,11 +6,9 @@ import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
 import com.xybakaqaq.modules.settings.BooleanSetting;
 
-/**
- * Shared target configuration: which entity kinds count as a valid target (players / animals /
- * mobs), plus whether to include invisible or dying entities. Read by {@link
- * com.xybakaqaq.utils.TargetUtil}; other features (combat, target HUD, …) can target through it.
- */
+// Shared target configuration: which entity kinds count as a valid target (players / animals /
+// mobs), plus whether to include invisible or dying entities. Read by {@link
+// com.xybakaqaq.utils.TargetUtil}; other features (combat, target HUD, …) can target through it.
 public final class Target extends Module {
 
 	private final BooleanSetting players = new BooleanSetting("Players", true);

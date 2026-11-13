@@ -29,10 +29,8 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.equipment.Equippable;
 
-/**
- * Item scoring / categorisation for the visual {@code InventoryHelper}. Ported from Flowing
- * (Yarn 1.21.4) to the Mojang-mapped 26.2 APIs, keeping only what the visual highlight needs.
- */
+// Item scoring / categorisation for the visual InventoryHelper. Ported from Flowing
+// (Yarn 1.21.4) to the Mojang-mapped 26.2 APIs, keeping only what the visual highlight needs.
 public final class InventoryUtils {
 
 	private static final Set<Item> CLEANER_WHITELIST = new HashSet<>(Arrays.asList(
@@ -157,10 +155,7 @@ public final class InventoryUtils {
 		return CLEANER_WHITELIST.contains(item);
 	}
 
-	/**
-	 * @return the best score of the given category among everything the player owns: the backpack,
-	 *         hotbar, offhand and the armor being worn ({@code -1} if they own nothing of it).
-	 */
+	// hotbar, offhand and the armor being worn (-1 if they own nothing of it).
 	public static double getPlayerMaxScore(Player player, String category) {
 		double max = -1.0D;
 		for (ItemStack stack : playerGear(player)) {

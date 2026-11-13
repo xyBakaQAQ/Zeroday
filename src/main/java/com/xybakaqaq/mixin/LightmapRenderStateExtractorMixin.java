@@ -9,11 +9,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-/**
- * FullBright: while the module is enabled, replaces the gamma value the lightmap reads
- * ({@code options.gamma().get().floatValue()} in {@code extract}) with a high value so the world
- * is fully lit. The first {@code Double.floatValue()} in {@code extract} is the gamma read.
- */
+// FullBright: while the module is enabled, replaces the gamma value the lightmap reads
+// (options.gamma().get().floatValue() in extract) with a high value so the world
+// is fully lit. The first Double.floatValue() in extract is the gamma read.
 @Mixin(LightmapRenderStateExtractor.class)
 public class LightmapRenderStateExtractorMixin {
 

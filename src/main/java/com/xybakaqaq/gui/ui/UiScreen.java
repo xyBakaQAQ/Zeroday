@@ -13,17 +13,15 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 
-/**
- * Base screen for the {@link com.xybakaqaq.gui.ui} framework. Hosts a single root component tree and:
- * <ul>
- *   <li>lays it out (flexbox) every frame to the full screen,</li>
- *   <li>renders it with Skija at the <b>physical framebuffer resolution</b> (the canvas is scaled by
- *       the GUI scale, so text is crisp — not the blurry low-res-then-upscaled approach),</li>
- *   <li>ticks animations with real delta time,</li>
- *   <li>routes clicks into the tree.</li>
- * </ul>
- * Subclasses implement {@link #build()} to construct the view (typically from a ViewModel).
- */
+// Base screen for the com.xybakaqaq.gui.ui framework. Hosts a single root component tree and:
+// <ul>
+// <li>lays it out (flexbox) every frame to the full screen,</li>
+// <li>renders it with Skija at the physical framebuffer resolution (the canvas is scaled by
+// the GUI scale, so text is crisp — not the blurry low-res-then-upscaled approach),</li>
+// <li>ticks animations with real delta time,</li>
+// <li>routes clicks into the tree.</li>
+// </ul>
+// Subclasses implement #build() to construct the view (typically from a ViewModel).
 public abstract class UiScreen extends Screen {
 
 	private final SkijaBridge bridge;
@@ -35,10 +33,10 @@ public abstract class UiScreen extends Screen {
 		this.bridge = new SkijaBridge("ui_" + bridgeName);
 	}
 
-	/** Builds the root component tree. Called on open and on resize. */
+	// Builds the root component tree. Called on open and on resize.
 	protected abstract com.xybakaqaq.gui.ui.Component build();
 
-	/** Dim backdrop colour drawn behind the UI (override to taste). */
+	// Dim backdrop colour drawn behind the UI (override to taste).
 	protected int dim() {
 		return 0x90101014;
 	}

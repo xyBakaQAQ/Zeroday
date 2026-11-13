@@ -21,11 +21,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Tab-completion for our chat commands. When the input starts with the command prefix, this
- * overrides the suggestions the vanilla {@code updateCommandInfo} produced (it already reset the
- * visible list) with our command names, or a command's per-argument suggestions.
- */
+// Tab-completion for our chat commands. When the input starts with the command prefix, this
+// overrides the suggestions the vanilla updateCommandInfo produced (it already reset the
+// visible list) with our command names, or a command's per-argument suggestions.
 @Mixin(CommandSuggestions.class)
 public class CommandSuggestionsMixin {
 

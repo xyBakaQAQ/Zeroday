@@ -1,8 +1,6 @@
 package com.xybakaqaq.modules.settings;
 
-/**
- * A simple on/off setting.
- */
+// A simple on/off setting.
 public class BooleanSetting extends Setting<Boolean> {
 
 	public BooleanSetting(String name, boolean defaultValue) {

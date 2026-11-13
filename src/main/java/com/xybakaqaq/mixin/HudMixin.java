@@ -29,15 +29,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Hooks the vanilla hotbar render so the mod's {@link HotbarManager} can optionally
- * replace it. {@code Hud.extractItemHotbar} is the method that lays out the hotbar
- * background, selection, slots and offhand each frame (MC 26.2 render-state model).
- *
- * <p>Also nudges the bottom status bars (health, armor, food, air, vehicle health) down by
- * {@link HudLayout#STATUS_OFFSET} so they fill the strip vacated by the floating hotbar.
- * Each of these methods anchors to the bottom via a single {@code guiHeight()} call.
- */
+// Hooks the vanilla hotbar render so the mod's HotbarManager can optionally
+// replace it. Hud.extractItemHotbar is the method that lays out the hotbar
+// background, selection, slots and offhand each frame (MC 26.2 render-state model).
+// Also nudges the bottom status bars (health, armor, food, air, vehicle health) down by
+// HudLayout#STATUS_OFFSET so they fill the strip vacated by the floating hotbar.
+// Each of these methods anchors to the bottom via a single guiHeight() call.
 @Mixin(Hud.class)
 public class HudMixin {
 

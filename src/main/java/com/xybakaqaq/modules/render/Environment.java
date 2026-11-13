@@ -10,13 +10,11 @@ import com.xybakaqaq.modules.settings.NumberSetting;
 
 import net.minecraft.world.level.biome.Biome;
 
-/**
- * Client-only environment overrides in one module: local weather (Clear / Rain / Snow / Thunder, with
- * an adjustable intensity) and a locked time of day. Each is its own sub-toggle so they can be used
- * independently. Driven by {@link com.xybakaqaq.mixin.LevelMixin} + {@link
- * com.xybakaqaq.mixin.ClientLevelMixin} (weather) and {@link
- * com.xybakaqaq.mixin.ClientClockManagerMixin} (time), all guarded to the client level.
- */
+// Client-only environment overrides in one module: local weather (Clear / Rain / Snow / Thunder, with
+// an adjustable intensity) and a locked time of day. Each is its own sub-toggle so they can be used
+// independently. Driven by com.xybakaqaq.mixin.LevelMixin + {@link
+// com.xybakaqaq.mixin.ClientLevelMixin} (weather) and {@link
+// com.xybakaqaq.mixin.ClientClockManagerMixin} (time), all guarded to the client level.
 public final class Environment extends Module {
 
 	private static Environment instance;
@@ -37,12 +35,12 @@ public final class Environment extends Module {
 
 	// ---------- weather ----------
 
-	/** @return whether the weather override is active. */
+
 	public static boolean weatherActive() {
 		return instance != null && instance.isEnabled() && instance.weather.isEnabled();
 	}
 
-	/** @return the rain level to report for the client level (0 for Clear). */
+
 	public static float rainLevel() {
 		if (instance == null || instance.weatherMode.getValue().equals("Clear")) {
 			return 0f;
@@ -50,13 +48,13 @@ public final class Environment extends Module {
 		return instance.intensity.getValue().floatValue();
 	}
 
-	/** @return the thunder level to report (intensity for Thunder, otherwise 0). */
+
 	public static float thunderLevel() {
 		return instance != null && instance.weatherMode.getValue().equals("Thunder")
 				? instance.intensity.getValue().floatValue() : 0f;
 	}
 
-	/** @return the forced precipitation type, or {@code null} to leave it (Clear / inactive). */
+
 	public static Biome.Precipitation precipType() {
 		if (!weatherActive()) {
 			return null;
@@ -70,12 +68,12 @@ public final class Environment extends Module {
 
 	// ---------- time ----------
 
-	/** @return whether the time override is active. */
+
 	public static boolean timeActive() {
 		return instance != null && instance.isEnabled() && instance.time.isEnabled();
 	}
 
-	/** @return the overworld clock tick to report. */
+
 	public static long ticks() {
 		return instance == null ? 0L : instance.timeOfDay.getValue().longValue();
 	}

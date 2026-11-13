@@ -6,12 +6,10 @@ import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
 import com.xybakaqaq.modules.settings.BooleanSetting;
 
-/**
- * On-screen key display: the movement keys (W/A/S/D) and the mouse buttons, highlighting each while
- * pressed, with optional Space and Shift rows and a CPS (clicks-per-second) counter on the mouse
- * buttons. Rendered by {@link com.xybakaqaq.gui.keystrokes.KeystrokesWidget} (Skija) and draggable
- * like the other HUD widgets while the chat bar is open.
- */
+// On-screen key display: the movement keys (W/A/S/D) and the mouse buttons, highlighting each while
+// pressed, with optional Space and Shift rows and a CPS (clicks-per-second) counter on the mouse
+// buttons. Rendered by com.xybakaqaq.gui.keystrokes.KeystrokesWidget (Skija) and draggable
+// like the other HUD widgets while the chat bar is open.
 public final class Keystrokes extends Module {
 
 	private final BooleanSetting space = new BooleanSetting("Space", true);

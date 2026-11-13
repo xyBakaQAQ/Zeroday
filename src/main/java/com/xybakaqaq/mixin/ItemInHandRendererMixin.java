@@ -24,17 +24,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Legacy first-person combat animations for the {@link Animation} module: while holding right-click
- * with a sword/axe, the held item is drawn in an old-style block pose (Sigma / Old / Astra / Slide /
- * Swank), offset by the module's Item X/Y/Z. When not blocking, vanilla rendering is left untouched.
- * Swords have no vanilla use action, so the blocking intent is detected via {@link Animation#blocking()}.
- *
- * <p>26.3 renamed {@code ItemInHandRenderer} to {@link FirstPersonHandsAndItemsRenderer} and made it
- * render-state driven; {@code submitArmWithItem} now takes the player/first-person render states.
- * {@code applyItemArmTransform} = Yarn {@code applyEquipOffset}; {@code applyItemArmAttackTransform}
- * = Yarn {@code applySwingOffset}.
- */
+// Legacy first-person combat animations for the Animation module: while holding right-click
+// with a sword/axe, the held item is drawn in an old-style block pose (Sigma / Old / Astra / Slide /
+// Swank), offset by the module's Item X/Y/Z. When not blocking, vanilla rendering is left untouched.
+// Swords have no vanilla use action, so the blocking intent is detected via Animation#blocking().
+// 26.3 renamed ItemInHandRenderer to FirstPersonHandsAndItemsRenderer and made it
+// render-state driven; submitArmWithItem now takes the player/first-person render states.
+// applyItemArmTransform = Yarn applyEquipOffset; applyItemArmAttackTransform
+// = Yarn applySwingOffset.
 @Mixin(FirstPersonHandsAndItemsRenderer.class)
 public class ItemInHandRendererMixin {
 
@@ -133,7 +130,7 @@ public class ItemInHandRendererMixin {
 		}
 	}
 
-	/** Shared finishing rotation used by most block modes. */
+	// Shared finishing rotation used by most block modes.
 	private void baseRotation(PoseStack poseStack) {
 		poseStack.rotateDegrees(Axis.YP, 77.0F);
 		poseStack.rotateDegrees(Axis.ZP, -10.0F);

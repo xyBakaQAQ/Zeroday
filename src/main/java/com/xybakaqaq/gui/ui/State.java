@@ -4,12 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * A minimal observable value for MVVM binding: the ViewModel holds {@code State}s, views subscribe
- * and react to changes. {@link #set} notifies listeners only when the value actually changes.
- *
- * @param <T> the value type
- */
+// A minimal observable value for MVVM binding: the ViewModel holds States, views subscribe
+// and react to changes. #set notifies listeners only when the value actually changes.
 public final class State<T> {
 
 	private T value;
@@ -33,7 +29,7 @@ public final class State<T> {
 		}
 	}
 
-	/** Subscribes to changes; immediately invokes {@code listener} with the current value. */
+	// Subscribes to changes; immediately invokes listener with the current value.
 	public State<T> bind(Consumer<T> listener) {
 		listeners.add(listener);
 		listener.accept(value);

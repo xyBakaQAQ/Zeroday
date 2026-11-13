@@ -4,12 +4,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
-/**
- * Shared combat-target resolver driven by <b>both</b> aiming and attacking: the entity under the
- * crosshair updates the target every frame, and {@link #onAttack} records a hit (so a target you
- * struck without holding the aim still counts). The remembered target is kept while alive, and
- * reported by {@link #resolve} when within the queried range. Used by the target HUD and Autoblock.
- */
+// Shared combat-target resolver driven by both aiming and attacking: the entity under the
+// crosshair updates the target every frame, and #onAttack records a hit (so a target you
+// struck without holding the aim still counts). The remembered target is kept while alive, and
+// reported by #resolve when within the queried range. Used by the target HUD and Autoblock.
 public final class CombatTarget {
 
 	private static LivingEntity lastTarget;
@@ -17,14 +15,14 @@ public final class CombatTarget {
 	private CombatTarget() {
 	}
 
-	/** Records the entity the player just attacked. */
+	// Records the entity the player just attacked.
 	public static void onAttack(Entity entity) {
 		if (entity instanceof LivingEntity living) {
 			lastTarget = living;
 		}
 	}
 
-	/** @return the current combat target within {@code maxBlocks}, or {@code null}. */
+
 	public static LivingEntity resolve(double maxBlocks) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.level == null) {
@@ -44,7 +42,7 @@ public final class CombatTarget {
 		return mc.player.distanceTo(target) <= maxBlocks ? target : null;
 	}
 
-	/** @return whether there is a combat target within {@code maxBlocks}. */
+
 	public static boolean has(double maxBlocks) {
 		return resolve(maxBlocks) != null;
 	}

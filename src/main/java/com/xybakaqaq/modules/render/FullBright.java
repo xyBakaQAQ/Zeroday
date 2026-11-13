@@ -5,10 +5,8 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
 
-/**
- * Removes world darkness by forcing the gamma (brightness) used by the lightmap to a high value.
- * The actual override lives in {@code LightmapRenderStateExtractorMixin}; this is just the toggle.
- */
+// Removes world darkness by forcing the gamma (brightness) used by the lightmap to a high value.
+// The actual override lives in LightmapRenderStateExtractorMixin; this is just the toggle.
 public final class FullBright extends Module {
 
 	public FullBright() {

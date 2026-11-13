@@ -24,13 +24,11 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 
-/**
- * The Skija-rendered potion-effect overlay: one row per active effect (color bar + MC icon + name +
- * remaining time), defaulting to the bottom-right and draggable while the chat bar is open. The
- * color bar flips to the outer screen edge like the ArrayList's: bar on the left edge in the left
- * half of the screen, on the right edge in the right half. The vanilla effect display is suppressed
- * by {@code HudMixin} while the HUD's Potions setting is on.
- */
+// The Skija-rendered potion-effect overlay: one row per active effect (color bar + MC icon + name +
+// remaining time), defaulting to the bottom-right and draggable while the chat bar is open. The
+// color bar flips to the outer screen edge like the ArrayList's: bar on the left edge in the left
+// half of the screen, on the right edge in the right half. The vanilla effect display is suppressed
+// by HudMixin while the HUD's Potions setting is on.
 public final class PotionWidget {
 
 	private static final String WINDOW = "potions";
@@ -128,7 +126,7 @@ public final class PotionWidget {
 		}
 	}
 
-	/** Begins a drag if the left button presses inside the panel (uses the last drawn rect). */
+	// Begins a drag if the left button presses inside the panel (uses the last drawn rect).
 	public static boolean mouseClicked(double mx, double my, int button) {
 		return drag.mouseClicked(mx, my, button);
 	}

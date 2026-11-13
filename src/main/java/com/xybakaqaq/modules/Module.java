@@ -12,20 +12,18 @@ import com.xybakaqaq.event.features.KeyboardEvent;
 import com.xybakaqaq.modules.settings.Setting;
 import com.xybakaqaq.utils.IMinecraft;
 
-/**
- * Base class for a feature module. Every module is an {@link EventListener}: override the event
- * hooks ({@link #onTick}, ...) you need. The default {@link #onKey} toggles the module on its
- * bound key. {@code mc} comes from {@link IMinecraft}.
- */
+// Base class for a feature module. Every module is an EventListener: override the event
+// hooks (#onTick, ...) you need. The default #onKey toggles the module on its
+// bound key. mc comes from IMinecraft.
 public abstract class Module implements EventListener, IMinecraft {
 
 	private final String name;
 	private final Category category;
 	private final String description;
-	/** SDL scancode bound to this module ({@link InputConstants#UNKNOWN} = unbound). */
+	// SDL scancode bound to this module (InputConstants#UNKNOWN = unbound).
 	private int key;
 	private boolean enabled;
-	/** Lazily collected from the subclass's {@link Setting} fields (no manual registration). */
+	// Lazily collected from the subclass's Setting fields (no manual registration).
 	private List<Setting<?>> settings;
 
 	protected Module(String name, Category category, String description) {
@@ -60,21 +58,18 @@ public abstract class Module implements EventListener, IMinecraft {
 		return enabled;
 	}
 
-	/** @return the bound SDL scancode, or {@link InputConstants#UNKNOWN} if unbound. */
+
 	public int getKey() {
 		return key;
 	}
 
-	/** Binds (or unbinds, with {@link InputConstants#UNKNOWN}) the toggle key. */
+	// Binds (or unbinds, with InputConstants#UNKNOWN) the toggle key.
 	public void setKey(int key) {
 		this.key = key;
 		ModuleManager.notifyChanged();
 	}
 
-	/**
-	 * @return this module's settings, auto-discovered (once, then cached) by reflecting over the
-	 *         {@link Setting} fields declared on the subclass — no manual registration needed.
-	 */
+	// Setting fields declared on the subclass — no manual registration needed.
 	public List<Setting<?>> getSettings() {
 		if (settings == null) {
 			settings = collectSettings();
@@ -101,7 +96,7 @@ public abstract class Module implements EventListener, IMinecraft {
 		return Collections.unmodifiableList(collected);
 	}
 
-	/** Enables/disables the module, firing {@link #onEnable()} or {@link #onDisable()} on change. */
+	// Enables/disables the module, firing #onEnable() or #onDisable() on change.
 	public void setEnabled(boolean enabled) {
 		if (this.enabled == enabled) {
 			return;
@@ -119,7 +114,7 @@ public abstract class Module implements EventListener, IMinecraft {
 		setEnabled(!enabled);
 	}
 
-	/** Called once when the module is registered. */
+	// Called once when the module is registered.
 	public void onRegister() {
 	}
 
@@ -130,11 +125,11 @@ public abstract class Module implements EventListener, IMinecraft {
 		}
 	}
 
-	/** Called when the module becomes enabled. */
+	// Called when the module becomes enabled.
 	protected void onEnable() {
 	}
 
-	/** Called when the module becomes disabled. */
+	// Called when the module becomes disabled.
 	protected void onDisable() {
 	}
 }

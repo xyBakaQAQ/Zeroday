@@ -18,15 +18,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * Visual inventory helper (ported from Flowing, visual mode only): compares <b>only weapons and
- * armor</b> against the best of their kind you own — the backpack, hotbar, offhand AND the armor
- * you are wearing, so chest contents are always measured against your equipped gear too. Your own
- * slots are tinted green when (tied for) the best — including identical duplicates and worn gear —
- * and red when strictly worse. In chests, items strictly better than your best are green, strictly
- * worse are red, and ties are left untinted. Everything else (tools, blocks, food, misc) is left
- * untinted. No automation.
- */
+// Visual inventory helper (ported from Flowing, visual mode only): compares only weapons and
+// armor against the best of their kind you own — the backpack, hotbar, offhand AND the armor
+// you are wearing, so chest contents are always measured against your equipped gear too. Your own
+// slots are tinted green when (tied for) the best — including identical duplicates and worn gear —
+// and red when strictly worse. In chests, items strictly better than your best are green, strictly
+// worse are red, and ties are left untinted. Everything else (tools, blocks, food, misc) is left
+// untinted. No automation.
 public final class InventoryHelper extends Module {
 
 	private static final int USEFUL = 0x5000FF00;
@@ -41,7 +39,7 @@ public final class InventoryHelper extends Module {
 		super("InventoryHelper", Category.PLAYER, "Highlights better (green) / worse (red) weapon & armor slots.", InputConstants.UNKNOWN.getValue());
 	}
 
-	/** @return the highlight ARGB for the slot, or 0. Called from the container-screen mixin per slot. */
+
 	public int getSlotHighlightColor(Slot slot) {
 		if (!isEnabled()) {
 			return 0;

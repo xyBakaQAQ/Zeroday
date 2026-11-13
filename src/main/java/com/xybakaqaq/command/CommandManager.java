@@ -9,16 +9,10 @@ import com.xybakaqaq.command.commands.HelpCommand;
 import com.xybakaqaq.command.commands.ToggleCommand;
 import com.xybakaqaq.modules.ModuleManager;
 
-/**
- * Registry and dispatcher for chat commands. {@link #dispatch(String)} returns {@code true} for any
- * message it consumed, so the chat mixin can keep it off the server.
- *
- * <p>Commands only work while the {@code Command} module (client category) is enabled; that module
- * also owns the prefix.
- */
+// Chat command registry; only active while the client-category Command module is on.
 public final class CommandManager {
 
-	/** Prefix used when the Command module has none configured. */
+	// Prefix used when the Command module has none configured.
 	public static final String DEFAULT_PREFIX = ".";
 
 	private static final List<Command> COMMANDS = new ArrayList<>();
@@ -36,29 +30,29 @@ public final class CommandManager {
 		COMMANDS.add(command);
 	}
 
-	/** @return all registered commands (for {@code help}). */
+
 	public static List<Command> commands() {
 		return List.copyOf(COMMANDS);
 	}
 
-	/** @return whether chat commands are active (the Command module is on). */
+
 	public static boolean enabled() {
 		com.xybakaqaq.modules.client.Command module = module();
 		return module != null && module.isEnabled();
 	}
 
-	/** @return the configured prefix, always non-empty. */
+
 	public static String prefix() {
 		com.xybakaqaq.modules.client.Command module = module();
 		return module == null ? DEFAULT_PREFIX : module.getPrefix();
 	}
 
-	/** @return every command name and alias (for tab completion). */
+
 	public static List<String> labels() {
 		return COMMANDS.stream().flatMap(command -> command.labels().stream()).toList();
 	}
 
-	/** @return the command matching {@code label} (name or alias), or {@code null}. */
+
 	public static Command get(String label) {
 		return COMMANDS.stream().filter(command -> command.matches(label)).findFirst().orElse(null);
 	}

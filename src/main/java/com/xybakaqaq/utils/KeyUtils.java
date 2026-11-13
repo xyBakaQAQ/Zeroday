@@ -6,22 +6,16 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import org.lwjgl.sdl.SDLKeyboard;
 
-/**
- * Key-code helpers. Minecraft 26.3 reports SDL scancodes from keyboard events, so keybinds are stored
- * as scancodes; these convert the older GLFW codes, and render a scancode as a readable name.
- */
+// 26.3 reports SDL scancodes; these convert legacy GLFW codes and name scancodes for display.
 public final class KeyUtils {
 
-	/** Value written to {@code config.json} once keybinds are known to be SDL scancodes. */
+	// Written to config.json once keybinds are known to be SDL scancodes.
 	public static final int KEY_SCHEME_SDL = 2;
 
 	private KeyUtils() {
 	}
 
-	/**
-	 * @return the SDL scancode for a legacy (26.2/GLFW) keycode, or {@link InputConstants#UNKNOWN} if
-	 *         there is no equivalent. Used only to migrate a config saved before the scancode switch.
-	 */
+	// Migrates a pre-scancode config: GLFW keycode to SDL scancode, or UNKNOWN.
 	public static int glfwToScancode(int glfwKey) {
 		// GLFW_KEY_UNKNOWN is -1; an unbound module was saved with that.
 		if (glfwKey <= 0) {
@@ -99,7 +93,7 @@ public final class KeyUtils {
 		};
 	}
 
-	/** @return a readable name for an SDL scancode, e.g. {@code "RSHIFT"}, or {@code "None"}. */
+
 	public static String name(int scancode) {
 		if (scancode == InputConstants.UNKNOWN.getValue()) {
 			return "None";

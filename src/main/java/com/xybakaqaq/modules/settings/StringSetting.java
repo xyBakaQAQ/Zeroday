@@ -1,8 +1,6 @@
 package com.xybakaqaq.modules.settings;
 
-/**
- * A free-form text setting, edited in the ClickGUI by clicking the row and typing.
- */
+// A free-form text setting, edited in the ClickGUI by clicking the row and typing.
 public class StringSetting extends Setting<String> {
 
 	private final int maxLength;

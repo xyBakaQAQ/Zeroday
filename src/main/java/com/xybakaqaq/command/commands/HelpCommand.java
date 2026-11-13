@@ -5,9 +5,7 @@ import java.util.stream.Collectors;
 import com.xybakaqaq.command.Command;
 import com.xybakaqaq.command.CommandManager;
 
-/**
- * {@code help} — lists every registered command.
- */
+// help — lists every registered command.
 public final class HelpCommand extends Command {
 
 	public HelpCommand() {

@@ -10,16 +10,14 @@ import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 
-/**
- * Entity targeting helper driven by the {@link Target} module's settings. {@link #isValid} filters a
- * single entity; {@link #getNearest} finds the closest valid target around the player.
- */
+// Entity targeting helper driven by the Target module's settings. #isValid filters a
+// single entity; #getNearest finds the closest valid target around the player.
 public final class TargetUtil {
 
 	private TargetUtil() {
 	}
 
-	/** @return whether {@code entity} is a valid target per the {@link Target} module's settings. */
+
 	public static boolean isValid(Entity entity) {
 		if (!(entity instanceof LivingEntity living)) {
 			return false;
@@ -55,7 +53,7 @@ public final class TargetUtil {
 		return false;
 	}
 
-	/** @return the nearest valid target within {@code range} blocks of the player, or {@code null}. */
+
 	public static LivingEntity getNearest(double range) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.level == null) {

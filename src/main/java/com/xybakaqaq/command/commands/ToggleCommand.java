@@ -6,9 +6,7 @@ import com.xybakaqaq.command.Command;
 import com.xybakaqaq.modules.Module;
 import com.xybakaqaq.modules.ModuleManager;
 
-/**
- * {@code toggle <module>} — toggles a module by name.
- */
+// toggle <module> — toggles a module by name.
 public final class ToggleCommand extends Command {
 
 	public ToggleCommand() {

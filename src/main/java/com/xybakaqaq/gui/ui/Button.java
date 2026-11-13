@@ -7,11 +7,9 @@ import io.github.humbleui.skija.Paint;
 import io.github.humbleui.skija.PaintMode;
 import io.github.humbleui.types.RRect;
 
-/**
- * A clickable container with an animated hover overlay. Holds child components (e.g. a {@link Text}
- * label). The click handler receives the mouse button as SDL reports it in 26.3 (1 = left,
- * 2 = middle, 3 = right).
- */
+// A clickable container with an animated hover overlay. Holds child components (e.g. a Text
+// label). The click handler receives the mouse button as SDL reports it in 26.3 (1 = left,
+// 2 = middle, 3 = right).
 public final class Button extends Component {
 
 	private final IntConsumer onClick;

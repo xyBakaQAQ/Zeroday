@@ -7,10 +7,8 @@ import io.github.humbleui.skija.Paint;
 import io.github.humbleui.skija.PaintMode;
 import io.github.humbleui.skija.Typeface;
 
-/**
- * A text label. Measures its own intrinsic size from the font, so it slots straight into the flexbox
- * layout. The string and colour are mutable (for MVVM binding via {@link State#bind}).
- */
+// A text label. Measures its own intrinsic size from the font, so it slots straight into the flexbox
+// layout. The string and colour are mutable (for MVVM binding via State#bind).
 public final class Text extends Component {
 
 	public enum TextAlign {

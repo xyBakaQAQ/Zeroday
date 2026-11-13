@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Draws the {@link InventoryHelper} slot highlight on top of each rendered slot. */
+// Draws the InventoryHelper slot highlight on top of each rendered slot.
 @Mixin(AbstractContainerScreen.class)
 public class AbstractContainerScreenMixin {
 

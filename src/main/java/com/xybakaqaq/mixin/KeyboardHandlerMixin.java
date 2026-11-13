@@ -10,10 +10,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Keybind entry point: forwards every raw GLFW key event from {@code KeyboardHandler.keyPress}
- * to {@link EventManager#onKey}.
- */
+// Keybind entry point: forwards every raw GLFW key event from KeyboardHandler.keyPress
+// to EventManager#onKey.
 @Mixin(KeyboardHandler.class)
 public class KeyboardHandlerMixin {
 

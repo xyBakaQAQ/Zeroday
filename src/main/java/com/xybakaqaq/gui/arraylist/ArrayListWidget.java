@@ -22,12 +22,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 
-/**
- * The Skija-rendered ArrayList: the enabled modules' names, longest first, each with a dark backdrop
- * and an accent bar. Defaults to the top-right and is draggable while the chat bar is open. The side
- * is adaptive: on the right half of the screen the rows stay flush right with the bar on the right
- * edge; drag it to the left half and the layout mirrors (flush left, bar on the left edge).
- */
+// The Skija-rendered ArrayList: the enabled modules' names, longest first, each with a dark backdrop
+// and an accent bar. Defaults to the top-right and is draggable while the chat bar is open. The side
+// is adaptive: on the right half of the screen the rows stay flush right with the bar on the right
+// edge; drag it to the left half and the layout mirrors (flush left, bar on the left edge).
 public final class ArrayListWidget {
 
 	private static final String WINDOW = "arraylist";
@@ -109,7 +107,7 @@ public final class ArrayListWidget {
 		}
 	}
 
-	/** Begins a drag if the left button presses inside the panel (uses the last drawn rect). */
+	// Begins a drag if the left button presses inside the panel (uses the last drawn rect).
 	public static boolean mouseClicked(double mx, double my, int button) {
 		return drag.mouseClicked(mx, my, button);
 	}

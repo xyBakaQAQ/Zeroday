@@ -7,10 +7,8 @@ import io.github.humbleui.skija.FontMgr;
 import io.github.humbleui.skija.FontStyle;
 import io.github.humbleui.skija.Typeface;
 
-/**
- * Shared Skija typefaces. The bundled HarmonyOS Sans fonts (under {@code assets/zeroday/fonts/}) are
- * loaded from the classpath; if that fails, a system typeface is used as a fallback.
- */
+// Shared Skija typefaces. The bundled HarmonyOS Sans fonts (under assets/zeroday/fonts/) are
+// loaded from the classpath; if that fails, a system typeface is used as a fallback.
 public final class Skia {
 
 	private static Typeface system;
@@ -19,7 +17,7 @@ public final class Skia {
 	private Skia() {
 	}
 
-	/** @return a system typeface (Microsoft YaHei if present, else the default). */
+
 	public static Typeface typeface() {
 		if (system == null) {
 			FontMgr mgr = FontMgr.getDefault();
@@ -31,7 +29,7 @@ public final class Skia {
 		return system;
 	}
 
-	/** HarmonyOS Sans SC Regular (bundled) — covers Latin + Chinese. */
+	// HarmonyOS Sans SC Regular (bundled) — covers Latin + Chinese.
 	public static Typeface harmony() {
 		if (harmony == null) {
 			harmony = load("HarmonyOS_Sans_SC_Regular.ttf");
@@ -39,7 +37,7 @@ public final class Skia {
 		return harmony;
 	}
 
-	/** Alias of {@link #harmony()} — only one HarmonyOS weight is bundled to keep the jar small. */
+	// Alias of #harmony() — only one HarmonyOS weight is bundled to keep the jar small.
 	public static Typeface harmonyMedium() {
 		return harmony();
 	}

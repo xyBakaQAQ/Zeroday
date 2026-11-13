@@ -22,11 +22,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Routes sent chat input through {@link CommandManager} (commands are handled locally, not sent),
- * and — while the chat bar is open and the mouse is free — routes clicks to the draggable HUD
- * widgets (ArrayList, Potions, Inventory, TargetHUD, Keystrokes).
- */
+// Routes sent chat input through CommandManager (commands are handled locally, not sent),
+// and — while the chat bar is open and the mouse is free — routes clicks to the draggable HUD
+// widgets (ArrayList, Potions, Inventory, TargetHUD, Keystrokes).
 @Mixin(ChatScreen.class)
 public class ChatScreenMixin {
 

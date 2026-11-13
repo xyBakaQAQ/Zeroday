@@ -19,13 +19,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.Identifier;
 
-/**
- * Shared Skija → MC bridge. Skija renders straight into an MC {@link NativeImage}'s native memory
- * (zero-copy, via {@link Surface#makeRasterDirect}) — Skija's {@code RGBA_8888} byte layout matches
- * NativeImage's RGBA, so no per-pixel conversion is needed. {@link DynamicTexture#upload()} then
- * pushes it to the GPU. Skija raster needs no GL context; only the upload touches the GPU, so call
- * {@link #render} on the render thread.
- */
+// Shared Skija → MC bridge. Skija renders straight into an MC NativeImage's native memory
+// (zero-copy, via Surface#makeRasterDirect) — Skija's RGBA_8888 byte layout matches
+// NativeImage's RGBA, so no per-pixel conversion is needed. DynamicTexture#upload() then
+// pushes it to the GPU. Skija raster needs no GL context; only the upload touches the GPU, so call
+// #render on the render thread.
 @SuppressWarnings("deprecation") // some Skija pixel APIs carry deprecation annotations
 public final class SkijaBridge implements AutoCloseable {
 
@@ -50,23 +48,21 @@ public final class SkijaBridge implements AutoCloseable {
 		return textureId;
 	}
 
-	/** A content key (deep-hashed over {@code parts}) for the cached {@link #render(int, int, long, Consumer)}. */
+	// A content key (deep-hashed over parts) for the cached #render(int, int, long, Consumer).
 	public static long key(Object... parts) {
 		return Arrays.deepHashCode(parts);
 	}
 
-	/** Renders {@code drawer} into a {@code w×h} surface and uploads it. Call on the render thread. */
+	// Renders drawer into a w×h surface and uploads it. Call on the render thread.
 	public void render(int w, int h, Consumer<Canvas> drawer) {
 		ensure(w, h);
 		draw(drawer);
 		hasKey = false;
 	}
 
-	/**
-	 * Cached render: skips the raster + GPU upload when {@code key} and the size are unchanged from the
-	 * last call (the texture still holds that content, so the caller just re-blits it). Use a content
-	 * hash as {@code key} for mostly-static widgets to avoid per-frame work. Call on the render thread.
-	 */
+	// Cached render: skips the raster + GPU upload when key and the size are unchanged from the
+	// last call (the texture still holds that content, so the caller just re-blits it). Use a content
+	// hash as key for mostly-static widgets to avoid per-frame work. Call on the render thread.
 	public void render(int w, int h, long key, Consumer<Canvas> drawer) {
 		if (surface != null && w == width && h == height && hasKey && key == lastKey) {
 			return;

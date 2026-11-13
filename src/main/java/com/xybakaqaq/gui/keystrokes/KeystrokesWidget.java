@@ -22,12 +22,10 @@ import net.minecraft.client.Options;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 
-/**
- * The Skija-rendered keystrokes overlay: W/A/S/D, the mouse buttons, and optional Space / Shift rows,
- * each box lit while its key is held (the press highlight eases in/out). The mouse buttons can show a
- * live CPS (clicks-per-second) count. Rendered at the physical framebuffer resolution and draggable
- * while the chat bar is open, with its position persisted to {@code windows.json}.
- */
+// The Skija-rendered keystrokes overlay: W/A/S/D, the mouse buttons, and optional Space / Shift rows,
+// each box lit while its key is held (the press highlight eases in/out). The mouse buttons can show a
+// live CPS (clicks-per-second) count. Rendered at the physical framebuffer resolution and draggable
+// while the chat bar is open, with its position persisted to windows.json.
 public final class KeystrokesWidget {
 
 	private static final String WINDOW = "keystrokes";
@@ -193,7 +191,7 @@ public final class KeystrokesWidget {
 		return key.getTranslatedKeyMessage().getString();
 	}
 
-	/** Begins a drag if the left button presses inside the widget. */
+	// Begins a drag if the left button presses inside the widget.
 	public static boolean mouseClicked(double mx, double my, int button) {
 		return drag.mouseClicked(mx, my, button);
 	}

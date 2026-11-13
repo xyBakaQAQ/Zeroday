@@ -6,11 +6,9 @@ import com.xybakaqaq.event.features.TickEvent;
 import com.xybakaqaq.modules.Category;
 import com.xybakaqaq.modules.Module;
 
-/**
- * Always-sprint: each tick, holds down the vanilla sprint key so the game's own sprint logic
- * runs — no custom movement code. The {@code isDown()} guard keeps it pressed once (correct for
- * both hold-to-sprint and toggle-sprint options).
- */
+// Always-sprint: each tick, holds down the vanilla sprint key so the game's own sprint logic
+// runs — no custom movement code. The isDown() guard keeps it pressed once (correct for
+// both hold-to-sprint and toggle-sprint options).
 public final class Sprint extends Module {
 
 	public Sprint() {

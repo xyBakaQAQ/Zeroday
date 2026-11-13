@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Feeds the player's attack target to the {@link TargetHudWidget}. */
+// Feeds the player's attack target to the TargetHudWidget.
 @Mixin(MultiPlayerGameMode.class)
 public class MultiPlayerGameModeMixin {
 

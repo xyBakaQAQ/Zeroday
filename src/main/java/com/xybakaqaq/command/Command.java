@@ -7,10 +7,8 @@ import com.xybakaqaq.utils.IMinecraft;
 
 import net.minecraft.network.chat.Component;
 
-/**
- * Base class for a chat command: a name, optional aliases, a one-line description, and
- * {@link #execute(String[])}.
- */
+// Base class for a chat command: a name, optional aliases, a one-line description, and
+// #execute(String[]).
 public abstract class Command implements IMinecraft {
 
 	private final String name;
@@ -31,7 +29,7 @@ public abstract class Command implements IMinecraft {
 		return description;
 	}
 
-	/** @return the name followed by every alias (for tab completion). */
+
 	public final List<String> labels() {
 		List<String> labels = new ArrayList<>();
 		labels.add(name);
@@ -39,7 +37,7 @@ public abstract class Command implements IMinecraft {
 		return labels;
 	}
 
-	/** @return {@code true} if {@code label} is this command's name or one of its aliases. */
+
 	public final boolean matches(String label) {
 		if (name.equalsIgnoreCase(label)) {
 			return true;
@@ -52,18 +50,16 @@ public abstract class Command implements IMinecraft {
 		return false;
 	}
 
-	/** Runs the command. {@code args} is everything after the command name. */
+	// Runs the command. args is everything after the command name.
 	public abstract void execute(String[] args);
 
-	/**
-	 * Tab-completion candidates for the current (last) argument. {@code args} is the arguments
-	 * typed so far, the last being the partial word being completed. Default: no suggestions.
-	 */
+	// Tab-completion candidates for the current (last) argument. args is the arguments
+	// typed so far, the last being the partial word being completed. Default: no suggestions.
 	public List<String> complete(String[] args) {
 		return List.of();
 	}
 
-	/** Prints a client-only chat message (command feedback). */
+	// Prints a client-only chat message (command feedback).
 	protected final void info(String message) {
 		if (mc.gui != null) {
 			mc.gui.hud.getChat().addClientSystemMessage(Component.literal(message));

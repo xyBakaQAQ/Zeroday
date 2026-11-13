@@ -2,9 +2,7 @@ package com.xybakaqaq.modules.settings;
 
 import java.util.List;
 
-/**
- * A setting that cycles through a fixed list of named modes.
- */
+// A setting that cycles through a fixed list of named modes.
 public class ModeSetting extends Setting<String> {
 
 	private final List<String> modes;
@@ -18,12 +16,12 @@ public class ModeSetting extends Setting<String> {
 		return modes;
 	}
 
-	/** @return {@code true} if the current mode equals {@code mode}. */
+
 	public boolean is(String mode) {
 		return getValue().equals(mode);
 	}
 
-	/** Advances to the next mode, wrapping around to the first. */
+	// Advances to the next mode, wrapping around to the first.
 	public void cycle() {
 		int index = modes.indexOf(getValue());
 		setValue(modes.get((index + 1) % modes.size()));

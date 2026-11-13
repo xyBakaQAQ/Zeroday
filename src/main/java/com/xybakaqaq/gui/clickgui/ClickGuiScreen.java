@@ -40,18 +40,21 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 
-/**
- * The ClickGUI, built on the {@link com.xybakaqaq.gui.ui} framework: one draggable, flexbox-laid-out
- * panel per {@link Category}. Rendered crisply (physical-resolution Skija + HarmonyOS font) with
- * animated hover / on-off transitions. Left-click a module to toggle, right-click to expand its
- * settings + keybind. Panel positions persist to {@code windows.json}; which modules / dropdowns /
- * color pickers are expanded is remembered for the rest of the run.
- */
+// One draggable panel per Category. Left-click a module to toggle it, right-click to expand
+// its settings and keybind. Panel positions persist to windows.json.
 public class ClickGuiScreen extends UiScreen {
 
+	// Minimum panel width; panels widen to fit their longest row.
 	private static final int PANEL_W = 116;
 	private static final int HEADER_H = 20;
 	private static final int ROW_H = 16;
+	private static final int PICKER_H = 84;
+
+	// Gap between a row's label and its right-aligned value.
+	private static final float ROW_GAP = 12f;
+
+	// #pos sentinel: never dragged, so the panel sits in the auto column.
+	private static final int AUTO_X = Integer.MIN_VALUE;
 
 	// 26.3 reports SDL mouse buttons (1 = left, 2 = middle, 3 = right), not GLFW's 0/1/2.
 	private static final int MOUSE_LEFT = 1;
@@ -86,17 +89,15 @@ public class ClickGuiScreen extends UiScreen {
 
 	public ClickGuiScreen() {
 		super("clickgui", net.minecraft.network.chat.Component.literal("ClickGUI"));
-		int index = 0;
 		for (Category cat : Category.values()) {
 			if (modulesIn(cat).isEmpty()) {
 				continue;
 			}
-			float dx = 8 + index * (PANEL_W + 8);
+			// AUTO_X: never dragged, so build() places it in the auto-sized column.
 			pos.put(cat, new float[] {
-					WindowConfig.getX("clickgui_" + cat, (int) dx),
+					WindowConfig.getX("clickgui_" + cat, AUTO_X),
 					WindowConfig.getY("clickgui_" + cat, 8)
 			});
-			index++;
 		}
 	}
 
@@ -115,19 +116,22 @@ public class ClickGuiScreen extends UiScreen {
 		panels.clear();
 		headers.clear();
 		Component root = new Component().free().size(width, height);
+
+		// Measure every panel first so the never-dragged ones share a uniform column width.
+		List<Category> cats = new ArrayList<>();
+		List<Component> built = new ArrayList<>();
+		float columnW = PANEL_W;
 		for (Category cat : Category.values()) {
 			List<Module> mods = modulesIn(cat);
 			if (mods.isEmpty()) {
 				continue;
 			}
-			float[] p = pos.get(cat);
 			Component panel = new Component()
 					.dir(Component.Axis.COLUMN)
 					.align(Component.Align.STRETCH)
-					.width(PANEL_W)
+					.minWidth(PANEL_W)
 					.bg(PANEL_BG)
-					.radius(5)
-					.pos(p[0], p[1]);
+					.radius(5);
 
 			Component header = new Text(catName(cat), Skia.harmonyMedium(), 12f, TEXT)
 					.textAlign(Text.TextAlign.LEFT)
@@ -167,8 +171,20 @@ public class ClickGuiScreen extends UiScreen {
 					panel.add(new BindRow(module));
 				}
 			}
+			panel.measure();
+			columnW = Math.max(columnW, panel.measuredW());
+			cats.add(cat);
+			built.add(panel);
+		}
+
+		for (int i = 0; i < built.size(); i++) {
+			Category cat = cats.get(i);
+			Component panel = built.get(i);
+			float[] p = pos.get(cat);
+			float x = p[0] == AUTO_X ? 8 + i * (columnW + 8) : p[0];
+			panel.pos(x, p[1]);
 			panels.put(cat, panel);
-			headers.put(cat, header);
+			headers.put(cat, panel.children.get(0));
 			root.add(panel);
 		}
 		return root;
@@ -294,6 +310,12 @@ public class ClickGuiScreen extends UiScreen {
 		}
 
 		@Override
+		protected float intrinsicCross() {
+			return 8 + bodyFont.measureTextWidth(module.getName()) + ROW_GAP
+					+ bodyFont.measureTextWidth("+") + 12;
+		}
+
+		@Override
 		protected void onUpdate(float dt, double mx, double my) {
 			hover.set(contains(mx, my) ? 1f : 0f);
 			hover.update(dt);
@@ -342,6 +364,11 @@ public class ClickGuiScreen extends UiScreen {
 		}
 
 		@Override
+		protected float intrinsicCross() {
+			return rowWidth(setting.isChild() ? 24 : 14, setting.getName(), setting.isEnabled() ? "ON" : "OFF");
+		}
+
+		@Override
 		protected void onUpdate(float dt, double mx, double my) {
 			hover.set(contains(mx, my) ? 1f : 0f);
 			hover.update(dt);
@@ -367,7 +394,7 @@ public class ClickGuiScreen extends UiScreen {
 		}
 	}
 
-	/** Header row of a mode setting: shows the current value; click opens/closes its dropdown. */
+	// Header row of a mode setting: shows the current value; click opens/closes its dropdown.
 	private final class ModeHeaderRow extends Component {
 		private final ModeSetting setting;
 		private final Anim hover = new Anim(0);
@@ -375,6 +402,11 @@ public class ClickGuiScreen extends UiScreen {
 		ModeHeaderRow(ModeSetting setting) {
 			this.setting = setting;
 			height(ROW_H);
+		}
+
+		@Override
+		protected float intrinsicCross() {
+			return rowWidth(14, setting.getName(), setting.getValue());
 		}
 
 		@Override
@@ -404,7 +436,7 @@ public class ClickGuiScreen extends UiScreen {
 		}
 	}
 
-	/** One option inside an open mode dropdown; click selects it and closes the dropdown. */
+	// One option inside an open mode dropdown; click selects it and closes the dropdown.
 	private final class ModeOptionRow extends Component {
 		private final ModeSetting setting;
 		private final String option;
@@ -414,6 +446,11 @@ public class ClickGuiScreen extends UiScreen {
 			this.setting = setting;
 			this.option = option;
 			height(ROW_H);
+		}
+
+		@Override
+		protected float intrinsicCross() {
+			return 24 + bodyFont.measureTextWidth(option) + 8;
 		}
 
 		@Override
@@ -445,7 +482,7 @@ public class ClickGuiScreen extends UiScreen {
 		}
 	}
 
-	/** A number setting: name + value + a draggable slider track. Click or drag to set the value. */
+	// A number setting: name + value + a draggable slider track. Click or drag to set the value.
 	private final class NumberRow extends Component {
 		private final NumberSetting setting;
 		private final Anim hover = new Anim(0);
@@ -453,6 +490,16 @@ public class ClickGuiScreen extends UiScreen {
 		NumberRow(NumberSetting setting) {
 			this.setting = setting;
 			height(ROW_H + 4);
+		}
+
+		// Whole-number steps (line counts, times of day) are shown without decimals.
+		private String value() {
+			return String.format(Locale.ROOT, setting.getStep() >= 1.0 ? "%.0f" : "%.2f", setting.getValue());
+		}
+
+		@Override
+		protected float intrinsicCross() {
+			return rowWidth(setting.isChild() ? 24 : 14, setting.getName(), value());
 		}
 
 		@Override
@@ -471,7 +518,7 @@ public class ClickGuiScreen extends UiScreen {
 			// text sits in the upper part of the row; the slider track gets the bottom strip
 			float textH = h - 6;
 			drawText(canvas, bodyFont, paint, setting.getName(), x + (setting.isChild() ? 24 : 14), y, textH, SUBTEXT);
-			drawTextRight(canvas, bodyFont, paint, String.format(Locale.ROOT, "%.2f", setting.getValue()), x + w - 8, y, textH, ACCENT);
+			drawTextRight(canvas, bodyFont, paint, value(), x + w - 8, y, textH, ACCENT);
 
 			float tx = x + 8;
 			float tw = w - 16;
@@ -501,7 +548,7 @@ public class ClickGuiScreen extends UiScreen {
 		}
 	}
 
-	/** A color setting: name + a swatch on the right; click toggles the picker below it. */
+	// A color setting: name + a swatch on the right; click toggles the picker below it.
 	private final class ColorRow extends Component {
 		private final ColorSetting setting;
 		private final Anim hover = new Anim(0);
@@ -509,6 +556,12 @@ public class ClickGuiScreen extends UiScreen {
 		ColorRow(ColorSetting setting) {
 			this.setting = setting;
 			height(ROW_H);
+		}
+
+		@Override
+		protected float intrinsicCross() {
+			// label, a gap, then the 16px swatch sitting 8px from the right edge
+			return rowWidth(setting.isChild() ? 24 : 14, setting.getName(), null) + ROW_GAP + 16;
 		}
 
 		@Override
@@ -667,10 +720,15 @@ public class ClickGuiScreen extends UiScreen {
 		}
 	}
 
-	/** A free-form text setting: name + current value; click to edit, typing edits, Esc/Enter ends. */
+	// A free-form text setting: name + current value; click to edit, typing edits, Esc/Enter ends.
 	private final class StringRow extends Component {
 		private final StringSetting setting;
 		private final Anim hover = new Anim(0);
+
+		@Override
+		protected float intrinsicCross() {
+			return rowWidth(14, "Bind", KeyUtils.name(module.getKey()));
+		}
 
 		StringRow(StringSetting setting) {
 			this.setting = setting;
@@ -707,6 +765,11 @@ public class ClickGuiScreen extends UiScreen {
 	// ---------- helpers ----------
 
 	private static void drawText(Canvas canvas, Font font, Paint paint, String s, float tx, float rowY, float rowH, int color) {
+		@Override
+		protected float intrinsicCross() {
+			return rowWidth(14, setting.getName(), setting.getValue() + "_");
+		}
+
 		FontMetrics m = font.getMetrics();
 		float baseline = rowY + rowH / 2f - (m.getAscent() + m.getDescent()) / 2f;
 		paint.setMode(PaintMode.FILL);
@@ -736,13 +799,22 @@ public class ClickGuiScreen extends UiScreen {
 		int f = (from >>> shift) & 0xFF;
 		int tt = (to >>> shift) & 0xFF;
 		return Math.round(f + (tt - f) * t);
+	// Natural width of a "label ... value" row. value may be null for fixed-width widgets.
+	private float rowWidth(float left, String label, String value) {
+		float w = left + bodyFont.measureTextWidth(label);
+		if (value != null && !value.isEmpty()) {
+			w += ROW_GAP + bodyFont.measureTextWidth(value);
+		}
+		return w + 8;
+	}
+
 	}
 
 	private static float clamp01(float v) {
 		return Math.max(0f, Math.min(1f, v));
 	}
 
-	/** HSV (each 0..1) to packed RGB (0xRRGGBB). */
+	// HSV (each 0..1) to packed RGB (0xRRGGBB).
 	private static int hsvToRgb(float h, float s, float v) {
 		h = (h % 1f + 1f) % 1f;
 		int i = (int) (h * 6f) % 6;
@@ -764,7 +836,7 @@ public class ClickGuiScreen extends UiScreen {
 		return (Math.round(r * 255f) << 16) | (Math.round(g * 255f) << 8) | Math.round(b * 255f);
 	}
 
-	/** Packed ARGB to HSV components {h, s, v}, each 0..1. */
+	// Packed ARGB to HSV components {h, s, v}, each 0..1.
 	private static float[] rgbToHsv(int argb) {
 		float r = ((argb >> 16) & 0xFF) / 255f;
 		float g = ((argb >> 8) & 0xFF) / 255f;

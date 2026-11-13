@@ -8,14 +8,8 @@ import io.github.humbleui.skija.Paint;
 import io.github.humbleui.skija.PaintMode;
 import io.github.humbleui.types.RRect;
 
-/**
- * Base UI component: a node in a flexbox tree (Yoga-style layout — flex direction, justify, align,
- * padding, margin, gap, grow), drawn with Skija. Layout is two-pass: {@link #measure} computes
- * intrinsic sizes bottom-up, then {@link #arrange} assigns absolute bounds top-down. Subclasses add
- * content ({@link Text}) or interaction ({@link Button}).
- *
- * <p>Sizes are in GUI pixels. {@code NaN} width/height means "auto" (measured from content).
- */
+// Flexbox-style UI node drawn with Skija. #measure sizes bottom-up, #arrange places
+// top-down. NaN width/height means "auto".
 public class Component {
 
 	public enum Axis {
@@ -33,6 +27,7 @@ public class Component {
 	// --- style ---
 	protected float styleW = Float.NaN;
 	protected float styleH = Float.NaN;
+	protected float minW;
 	protected float grow;
 	protected Axis direction = Axis.COLUMN;
 	protected Justify justify = Justify.START;
@@ -70,6 +65,12 @@ public class Component {
 
 	public Component height(float height) {
 		this.styleH = height;
+		return this;
+	}
+
+	// Lower bound for the measured (auto) width.
+	public Component minWidth(float minWidth) {
+		this.minW = minWidth;
 		return this;
 	}
 
@@ -138,13 +139,13 @@ public class Component {
 		return this;
 	}
 
-	/** Marks this container as free/absolute: children are placed at their {@link #pos}. */
+	// Marks this container as free/absolute: children are placed at their #pos.
 	public Component free() {
 		this.freeLayout = true;
 		return this;
 	}
 
-	/** Absolute offset within a {@link #free} parent's content box. */
+	// Absolute offset within a #free parent's content box.
 	public Component pos(float x, float y) {
 		this.posX = x;
 		this.posY = y;
@@ -161,7 +162,7 @@ public class Component {
 
 	// ---------- layout ----------
 
-	/** Bottom-up: compute intrinsic (auto) size from content. */
+	// Bottom-up: compute the auto size from content.
 	public void measure() {
 		for (Component c : children) {
 			c.measure();
@@ -183,11 +184,16 @@ public class Component {
 		}
 		float autoW = direction == Axis.ROW ? autoMain + padX : autoCross + padX;
 		float autoH = direction == Axis.ROW ? autoCross + padY : autoMain + padY;
-		measuredW = Float.isNaN(styleW) ? autoW : styleW;
+		measuredW = Float.isNaN(styleW) ? Math.max(autoW, minW) : styleW;
 		measuredH = Float.isNaN(styleH) ? autoH : styleH;
 	}
 
-	/** Top-down: place this node at the given bounds and lay out its children. */
+	// Width this node wants, as computed by #measure.
+	public float measuredW() {
+		return measuredW;
+	}
+
+	// Top-down: place this node and lay out its children.
 	public void arrange(float x, float y, float w, float h) {
 		this.x = x;
 		this.y = y;
@@ -289,7 +295,7 @@ public class Component {
 		return direction == Axis.ROW ? hv : wv;
 	}
 
-	/** Intrinsic main-axis size for a leaf (overridden by content components like {@link Text}). */
+	// Intrinsic main-axis size for a leaf (overridden by content components like Text).
 	protected float intrinsicMain() {
 		return 0;
 	}
@@ -334,7 +340,7 @@ public class Component {
 
 	// ---------- events ----------
 
-	/** Dispatches a click to the top-most component under the cursor. @return whether handled. */
+	// Dispatches a click to the top-most component under the cursor. @return whether handled.
 	public boolean dispatchClick(double mouseX, double mouseY, int button) {
 		for (int i = children.size() - 1; i >= 0; i--) {
 			if (children.get(i).dispatchClick(mouseX, mouseY, button)) {

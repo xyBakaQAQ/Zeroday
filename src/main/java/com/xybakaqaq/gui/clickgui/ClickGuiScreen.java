@@ -584,7 +584,8 @@ public class ClickGuiScreen extends UiScreen {
 			float syp = y + (h - sh) / 2f;
 			paint.setColor(0xFF101014);
 			canvas.drawRRect(RRect.makeXYWH(sxp - 1, syp - 1, sw + 2, sh + 2, 2), paint);
-			paint.setColor(0xFF000000 | (setting.getColor() & 0xFFFFFF));
+			// draw the color at its real alpha over the swatch backdrop, so transparency is visible
+			paint.setColor(setting.getColor());
 			canvas.drawRRect(RRect.makeXYWH(sxp, syp, sw, sh, 2), paint);
 		}
 
@@ -598,74 +599,102 @@ public class ClickGuiScreen extends UiScreen {
 		}
 	}
 
-	/** The expanded color picker: a saturation/value square + a hue strip, both drag-to-pick. */
+	// SV square + hue strip + alpha strip. #dragPart keeps a drag on the strip it started on.
 	private final class ColorPickerRow extends Component {
+
+		private enum Part {
+			SV, HUE, ALPHA
+		}
+
 		private final ColorSetting setting;
-		private boolean dragHue;
+		private Part dragPart = Part.SV;
 
 		ColorPickerRow(ColorSetting setting) {
 			this.setting = setting;
-			height(72);
+			height(PICKER_H);
+		}
+
+		@Override
+		protected float intrinsicCross() {
+			// the picker itself is stretchy; this only keeps the SV square from collapsing
+			return PANEL_W;
 		}
 
 		@Override
 		protected void onUpdate(float dt, double mx, double my) {
 		}
 
+		// {svX, svY, svW, svH, hueX, hueY, hueW, hueH, alphaX, alphaY, alphaW, alphaH}
 		private float[] geom() {
-			float sx = x + 8;
+			float gx = x + 8;
+			float gw = Math.max(1f, w - 16);
 			float sy = y + 4;
-			float sqw = w - 16;
 			float sqh = 46;
-			float hx = x + 8;
 			float hy = sy + sqh + 6;
-			float hw = w - 16;
 			float hh = 9;
-			return new float[] {sx, sy, sqw, sqh, hx, hy, hw, hh};
+			float ay = hy + hh + 5;
+			return new float[] {gx, sy, gw, sqh, gx, hy, gw, hh, gx, ay, gw, hh};
 		}
 
 		@Override
 		protected void drawSelf(Canvas canvas, Paint paint) {
 			float[] g = geom();
-			float sx = g[0];
-			float sy = g[1];
-			float sqw = g[2];
-			float sqh = g[3];
-			float hx = g[4];
-			float hy = g[5];
-			float hw = g[6];
-			float hh = g[7];
 			float[] hsv = rgbToHsv(setting.getColor());
-			int hueColor = 0xFF000000 | hsvToRgb(hsv[0], 1f, 1f);
+			int rgb = hsvToRgb(hsv[0], hsv[1], hsv[2]);
+			int alpha = setting.getColor() >>> 24;
 
 			paint.setMode(PaintMode.FILL);
-			try (Shader base = Shader.makeLinearGradient(sx, sy, sx + sqw, sy, new int[] {0xFFFFFFFF, hueColor})) {
+			// Opaque backdrop: the panel behind is semi-transparent, and the SV/alpha gradients would
+			// otherwise let it bleed through and make the picker look transparent too.
+			paint.setShader(null);
+			paint.setColor(0xFF15151B);
+			canvas.drawRRect(RRect.makeXYWH(x, y, w, h, 4), paint);
+			try (Shader base = Shader.makeLinearGradient(g[0], g[1], g[0] + g[2], g[1],
+					new int[] {0xFFFFFFFF, 0xFF000000 | hsvToRgb(hsv[0], 1f, 1f)})) {
 				paint.setShader(base);
-				canvas.drawRect(Rect.makeXYWH(sx, sy, sqw, sqh), paint);
+				canvas.drawRect(Rect.makeXYWH(g[0], g[1], g[2], g[3]), paint);
 			}
-			try (Shader shade = Shader.makeLinearGradient(sx, sy, sx, sy + sqh, new int[] {0x00000000, 0xFF000000})) {
+			try (Shader shade = Shader.makeLinearGradient(g[0], g[1], g[0], g[1] + g[3],
+					new int[] {0x00000000, 0xFF000000})) {
 				paint.setShader(shade);
-				canvas.drawRect(Rect.makeXYWH(sx, sy, sqw, sqh), paint);
+				canvas.drawRect(Rect.makeXYWH(g[0], g[1], g[2], g[3]), paint);
 			}
-			try (Shader hue = Shader.makeLinearGradient(hx, hy, hx + hw, hy, new int[] {
+			try (Shader hue = Shader.makeLinearGradient(g[4], g[5], g[4] + g[6], g[5], new int[] {
 					0xFFFF0000, 0xFFFFFF00, 0xFF00FF00, 0xFF00FFFF, 0xFF0000FF, 0xFFFF00FF, 0xFFFF0000})) {
 				paint.setShader(hue);
-				canvas.drawRRect(RRect.makeXYWH(hx, hy, hw, hh, 2), paint);
+				canvas.drawRRect(RRect.makeXYWH(g[4], g[5], g[6], g[7], 2), paint);
+			}
+			// checkerboard behind the alpha strip, then the opaque color fading out across it
+			paint.setShader(null);
+			paint.setColor(0xFF3A3A44);
+			canvas.drawRRect(RRect.makeXYWH(g[8], g[9], g[10], g[11], 2), paint);
+			try (Shader fade = Shader.makeLinearGradient(g[8], g[9], g[8] + g[10], g[9],
+					new int[] {0xFF000000 | rgb, rgb})) {
+				paint.setShader(fade);
+				canvas.drawRRect(RRect.makeXYWH(g[8], g[9], g[10], g[11], 2), paint);
 			}
 			paint.setShader(null);
 
 			paint.setMode(PaintMode.STROKE);
 			paint.setStrokeWidth(1.4f);
 			paint.setColor(0xFFFFFFFF);
-			canvas.drawCircle(sx + hsv[1] * sqw, sy + (1f - hsv[2]) * sqh, 2.5f, paint);
-			canvas.drawRect(Rect.makeXYWH(hx + hsv[0] * hw - 1, hy - 1, 2, hh + 2), paint);
+			canvas.drawCircle(g[0] + hsv[1] * g[2], g[1] + (1f - hsv[2]) * g[3], 2.5f, paint);
+			canvas.drawRect(Rect.makeXYWH(g[4] + hsv[0] * g[6] - 1, g[5] - 1, 2, g[7] + 2), paint);
+			canvas.drawRect(Rect.makeXYWH(g[8] + alpha / 255f * g[10] - 1, g[9] - 1, 2, g[11] + 2), paint);
 			paint.setMode(PaintMode.FILL);
 			paint.setStrokeWidth(1f);
 		}
 
 		@Override
 		protected boolean onClick(double mx, double my, int button) {
-			dragHue = my >= geom()[5] - 2;
+			float[] g = geom();
+			if (my >= g[9] - 2) {
+				dragPart = Part.ALPHA;
+			} else if (my >= g[5] - 2) {
+				dragPart = Part.HUE;
+			} else {
+				dragPart = Part.SV;
+			}
 			activeColor = this;
 			applyAt(mx, my);
 			return true;
@@ -674,15 +703,16 @@ public class ClickGuiScreen extends UiScreen {
 		void applyAt(double mx, double my) {
 			float[] g = geom();
 			float[] hsv = rgbToHsv(setting.getColor());
-			if (dragHue) {
-				hsv[0] = clamp01((float) ((mx - g[4]) / g[6]));
-			} else {
-				hsv[1] = clamp01((float) ((mx - g[0]) / g[2]));
-				hsv[2] = 1f - clamp01((float) ((my - g[1]) / g[3]));
+			int alpha = setting.getColor() >>> 24;
+			switch (dragPart) {
+				case HUE -> hsv[0] = clamp01((float) ((mx - g[4]) / g[6]));
+				case ALPHA -> alpha = Math.round(clamp01((float) ((mx - g[8]) / g[10])) * 255f);
+				case SV -> {
+					hsv[1] = clamp01((float) ((mx - g[0]) / g[2]));
+					hsv[2] = 1f - clamp01((float) ((my - g[1]) / g[3]));
+				}
 			}
-			// keep the setting's alpha, so translucent colors (e.g. the chat backdrop) stay translucent
-			int alpha = setting.getColor() & 0xFF000000;
-			setting.setColor((alpha == 0 ? 0xFF000000 : alpha) | hsvToRgb(hsv[0], hsv[1], hsv[2]));
+			setting.setColor((alpha << 24) | hsvToRgb(hsv[0], hsv[1], hsv[2]));
 		}
 	}
 
@@ -693,6 +723,11 @@ public class ClickGuiScreen extends UiScreen {
 		BindRow(Module module) {
 			this.module = module;
 			height(ROW_H);
+		}
+
+		@Override
+		protected float intrinsicCross() {
+			return rowWidth(14, "Bind", KeyUtils.name(module.getKey()));
 		}
 
 		@Override
@@ -725,14 +760,14 @@ public class ClickGuiScreen extends UiScreen {
 		private final StringSetting setting;
 		private final Anim hover = new Anim(0);
 
-		@Override
-		protected float intrinsicCross() {
-			return rowWidth(14, "Bind", KeyUtils.name(module.getKey()));
-		}
-
 		StringRow(StringSetting setting) {
 			this.setting = setting;
 			height(ROW_H);
+		}
+
+		@Override
+		protected float intrinsicCross() {
+			return rowWidth(14, setting.getName(), setting.getValue() + "_");
 		}
 
 		@Override
@@ -764,12 +799,16 @@ public class ClickGuiScreen extends UiScreen {
 
 	// ---------- helpers ----------
 
-	private static void drawText(Canvas canvas, Font font, Paint paint, String s, float tx, float rowY, float rowH, int color) {
-		@Override
-		protected float intrinsicCross() {
-			return rowWidth(14, setting.getName(), setting.getValue() + "_");
+	// Natural width of a "label ... value" row. value may be null for fixed-width widgets.
+	private float rowWidth(float left, String label, String value) {
+		float w = left + bodyFont.measureTextWidth(label);
+		if (value != null && !value.isEmpty()) {
+			w += ROW_GAP + bodyFont.measureTextWidth(value);
 		}
+		return w + 8;
+	}
 
+	private static void drawText(Canvas canvas, Font font, Paint paint, String s, float tx, float rowY, float rowH, int color) {
 		FontMetrics m = font.getMetrics();
 		float baseline = rowY + rowH / 2f - (m.getAscent() + m.getDescent()) / 2f;
 		paint.setMode(PaintMode.FILL);
@@ -799,15 +838,6 @@ public class ClickGuiScreen extends UiScreen {
 		int f = (from >>> shift) & 0xFF;
 		int tt = (to >>> shift) & 0xFF;
 		return Math.round(f + (tt - f) * t);
-	// Natural width of a "label ... value" row. value may be null for fixed-width widgets.
-	private float rowWidth(float left, String label, String value) {
-		float w = left + bodyFont.measureTextWidth(label);
-		if (value != null && !value.isEmpty()) {
-			w += ROW_GAP + bodyFont.measureTextWidth(value);
-		}
-		return w + 8;
-	}
-
 	}
 
 	private static float clamp01(float v) {

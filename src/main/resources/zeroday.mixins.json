@@ -28,6 +28,7 @@
 		"LightmapRenderStateExtractorMixin",
 		"MinecraftMixin",
 		"MultiPlayerGameModeMixin",
+		"ScreenAccessor",
 		"ScreenMixin",
 		"SelectWorldScreenMixin",
 		"ServerSelectionListMixin",

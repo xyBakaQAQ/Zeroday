@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.xybakaqaq.Zeroday;
+import com.xybakaqaq.config.UiConfig;
+import com.xybakaqaq.mixin.ScreenAccessor;
 import com.xybakaqaq.utils.Sdf;
 import com.xybakaqaq.utils.skia.Skia;
 import com.xybakaqaq.utils.skia.SkijaBridge;
@@ -22,31 +24,39 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.TitleScreen;
-
 import net.minecraft.client.renderer.RenderPipelines;
+
 // Custom Skija title screen. The menu is baked into one cached texture (gradient, wordmark, button
 // panels and labels) and blitted each frame; hover is a cheap GPU overlay. The vanilla buttons are
 // re-laid-out into the stack and keep handling clicks.
 public final class MainMenu {
 
+	// Layout at scale 1; layout() shrinks it to fit small windows.
 	private static final int MENU_X = 46;
 	private static final int BTN_W = 200;
-	// Layout at scale 1; layout() shrinks it to fit small windows.
 	private static final int BTN_H = 22;
 	private static final int GAP = 7;
-
-	private static final int TEXT = 0xFFE8E8EA;
 	private static final float TITLE_SIZE = 34f;
 	private static final float LABEL_SIZE = 13f;
 	private static final float UNDERLINE_W = 132f;
 	private static final int TITLE_BLOCK = 60;
+
+	private static final int TEXT = 0xFFE8E8EA;
 	private static final int SUBTEXT = 0xFF9A9AA2;
 	private static final int ACCENT = 0xFFC20C0C;
 
+	private static final int TOGGLE_W = 112;
+	private static final int TOGGLE_H = 18;
+
 	private static final SkijaBridge cache = new SkijaBridge("mainmenu");
+	private static final SkijaBridge toggleCache = new SkijaBridge("mainmenu_toggle");
 	private static final List<AbstractWidget> buttons = new ArrayList<>();
 	private static int cacheW = -1;
 	private static int cacheH = -1;
+
+	// Resolved by layout().
+	private static float scale = 1f;
+	private static int menuX = MENU_X;
 
 	private MainMenu() {
 	}
@@ -54,10 +64,6 @@ public final class MainMenu {
 	// Called once from Zeroday.onInitialize() to preload the fonts.
 	public static void init() {
 		try {
-	// Resolved by layout().
-	private static float scale = 1f;
-	private static int menuX = MENU_X;
-
 			Skia.harmonyMedium();
 			Skia.harmony();
 		} catch (Throwable ignored) {
@@ -124,6 +130,61 @@ public final class MainMenu {
 				Sdf.roundRect(graphics, bx, by, bar, bh, radius, alpha(ACCENT, hv));
 			}
 		}
+		drawToggle(graphics, mouseX, mouseY);
+	}
+
+	// Draws only the custom/vanilla switch (also used while the vanilla menu is showing).
+	public static void drawToggle(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+		int guiW = graphics.guiWidth();
+		int guiH = graphics.guiHeight();
+		int x = guiW - TOGGLE_W - 10;
+		int y = guiH - TOGGLE_H - 10;
+		boolean custom = UiConfig.customMenu();
+
+		Window win = Minecraft.getInstance().getWindow();
+		float renderScale = Math.min(2f, guiW > 0 ? (float) win.getWidth() / guiW : 1f);
+		int sw = Math.max(1, Math.round(TOGGLE_W * renderScale));
+		int sh = Math.max(1, Math.round(TOGGLE_H * renderScale));
+		try {
+			toggleCache.render(sw, sh, SkijaBridge.key(custom, sw, sh), canvas -> {
+				canvas.scale(renderScale, renderScale);
+				try (Paint paint = new Paint()) {
+					paint.setAntiAlias(true);
+					paint.setColor(0x66141420);
+					canvas.drawRRect(RRect.makeXYWH(0, 0, TOGGLE_W, TOGGLE_H, 9), paint);
+					paint.setColor(custom ? ACCENT : 0xFF4A4A52);
+					canvas.drawRRect(RRect.makeXYWH(8, TOGGLE_H / 2f - 2, 4, 4, 2), paint);
+					try (Font font = new Font(Skia.harmony(), 9.5f)) {
+						FontMetrics metrics = font.getMetrics();
+						paint.setColor(custom ? TEXT : SUBTEXT);
+						canvas.drawString(custom ? "Custom Menu" : "Vanilla Menu", 18,
+								TOGGLE_H / 2f - (metrics.getAscent() + metrics.getDescent()) / 2f, font, paint);
+					}
+				}
+			});
+			graphics.blit(RenderPipelines.GUI_TEXTURED, toggleCache.textureId(), x, y, 0.0F, 0.0F,
+					TOGGLE_W, TOGGLE_H, sw, sh, sw, sh);
+		} catch (Throwable ignored) {
+			// keep the vanilla screen usable even if Skija fails
+		}
+
+		if (mouseX >= x && mouseX < x + TOGGLE_W && mouseY >= y && mouseY < y + TOGGLE_H) {
+			Sdf.roundRect(graphics, x, y, TOGGLE_W, TOGGLE_H, 9, 0x33FFFFFF);
+		}
+	}
+
+	// True when the click hit the switch (and the mode was flipped).
+	public static boolean toggleClicked(TitleScreen screen, double mouseX, double mouseY) {
+		Minecraft mc = Minecraft.getInstance();
+		int x = mc.getWindow().getGuiScaledWidth() - TOGGLE_W - 10;
+		int y = mc.getWindow().getGuiScaledHeight() - TOGGLE_H - 10;
+		if (mouseX < x || mouseX >= x + TOGGLE_W || mouseY < y || mouseY >= y + TOGGLE_H) {
+			return false;
+		}
+		UiConfig.setCustomMenu(!UiConfig.customMenu());
+		// Rebuild the title screen so the widgets return to (or leave) the vanilla layout.
+		((ScreenAccessor) screen).zeroday$rebuildWidgets();
+		return true;
 	}
 
 	private static void blitCache(GuiGraphicsExtractor graphics) {

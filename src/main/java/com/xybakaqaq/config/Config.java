@@ -6,14 +6,10 @@ import java.nio.file.Path;
 
 import net.fabricmc.loader.api.FabricLoader;
 
-/**
- * Central definition of the mod's on-disk layout, under {@code .minecraft/zeroday/}:
- *
- * <pre>
- *   config.json            module on/off, keybinds and settings
- *   windows.json           on-screen window positions (e.g. the arraylist xy)
- * </pre>
- */
+// Central definition of the mod's on-disk layout, under .minecraft/zeroday/:
+// config.json module on/off, keybinds and settings
+// windows.json on-screen window positions (e.g. the arraylist xy)
+// ui.json UI preferences (custom menu switch)
 public final class Config {
 
 	private static final Path DIR = FabricLoader.getInstance().getGameDir().resolve("zeroday");
@@ -31,6 +27,10 @@ public final class Config {
 
 	public static Path windowsFile() {
 		return dir().resolve("windows.json");
+	}
+
+	public static Path uiFile() {
+		return dir().resolve("ui.json");
 	}
 
 	private static Path ensure(Path path) {

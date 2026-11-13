@@ -4,6 +4,7 @@ import com.xybakaqaq.modules.ModuleManager;
 import com.xybakaqaq.modules.render.TargetHUD;
 import com.xybakaqaq.utils.CombatTarget;
 import com.xybakaqaq.utils.DragState;
+import com.xybakaqaq.utils.Sdf;
 import com.xybakaqaq.utils.skia.Skia;
 import com.xybakaqaq.utils.skia.SkijaBridge;
 
@@ -53,10 +54,13 @@ public final class TargetHudWidget {
 	private static float hurt;
 	private static float healthDisplay = -1f;
 	private static float ghostDisplay;
+	private static float ghostDelay;
 	private static float prevHealth;
 	private static float slideIn;
 	private static float clock;
-	private static long animSeq;
+
+	// Seconds the damage ghost holds before it starts draining, so the lost health is readable.
+	private static final float GHOST_HOLD = 0.3f;
 
 	// cached display data (so the fade-out keeps working after the entity is gone)
 	private static String cachedName = "";
@@ -97,23 +101,32 @@ public final class TargetHudWidget {
 			return;
 		}
 
-		appear += ((present ? 1f : 0f) - appear) * Math.min(1f, dt * 10f);
-		hurt += (0f - hurt) * Math.min(1f, dt * 6f);
-		slideIn += (0f - slideIn) * Math.min(1f, dt * 12f);
+		// Frame-rate independent smoothing (1 - e^-rate*dt) so the feel is the same at any FPS.
+		appear = approach(appear, present ? 1f : 0f, present ? 16f : 11f, dt);
+		hurt = approach(hurt, 0f, 8f, dt);
+		slideIn = approach(slideIn, 0f, 14f, dt);
 		clock += dt;
 		if (!present && appear < 0.02f) {
 			displayTarget = null;
 			return;
 		}
+
+		float targetFrac = cachedFrac;
 		if (healthDisplay < 0f) {
-			healthDisplay = cachedFrac;
-			ghostDisplay = cachedFrac;
+			healthDisplay = targetFrac;
+			ghostDisplay = targetFrac;
 		} else {
-			healthDisplay += (cachedFrac - healthDisplay) * Math.min(1f, dt * 14f);
-			if (cachedFrac > ghostDisplay) {
-				ghostDisplay = cachedFrac;
+			healthDisplay = approach(healthDisplay, targetFrac, 16f, dt);
+			if (targetFrac > ghostDisplay) {
+				// healed: the ghost snaps up with the bar
+				ghostDisplay = targetFrac;
+				ghostDelay = GHOST_HOLD;
 			} else {
-				ghostDisplay += (healthDisplay - ghostDisplay) * Math.min(1f, dt * 3f);
+				// damaged: hold briefly, then drain so the lost slice stays readable
+				ghostDelay = Math.max(0f, ghostDelay - dt);
+				if (ghostDelay <= 0f) {
+					ghostDisplay = approach(ghostDisplay, healthDisplay, 7f, dt);
+				}
 			}
 		}
 
@@ -139,20 +152,17 @@ public final class TargetHudWidget {
 		int contentX = 12 + HEAD + 6;
 		float hd = healthDisplay;
 		float ghost = ghostDisplay;
-		float frac = cachedFrac;
 		float flash = Math.max(0f, Math.min(1f, hurt));
-		String name = cachedName;
-		String hpText = cachedHpText;
+		// Ease the appear/disappear so it settles instead of just fading linearly.
+		float ease = easeOut(appear);
+		int alpha = Math.round(Math.max(0f, Math.min(1f, ease)) * 255f);
 
 		int drawX = drag.x() - Math.round(slideIn * 18f);
-		int drawY = drag.y() - Math.round((1f - appear) * 6f);
-		int alpha = Math.round(Math.max(0f, Math.min(1f, appear)) * 255f);
+		int drawY = drag.y() - Math.round((1f - ease) * 6f);
 
-		// The panel texture only depends on name / hp / bar / flash; appear (alpha), slide and shake are
-		// applied at blit time, so cache the raster whenever the bar + flash have settled.
-		boolean texSettled = flash < 0.01f && Math.abs(hd - frac) < 0.002f && Math.abs(ghost - hd) < 0.002f;
-		long key = texSettled ? SkijaBridge.key(name, hpText, Math.round(frac * 1000f)) : ++animSeq;
-
+		// Only the static part is baked (face, name, hp text). The bar, the damage ghost and the flash
+		// are live GPU quads, so a moving bar never re-rasterises Skija every frame.
+		long key = SkijaBridge.key(cachedName, cachedHpText, w, H);
 		Window win = Minecraft.getInstance().getWindow();
 		float scale = win.getGuiScaledWidth() > 0 ? (float) win.getWidth() / win.getGuiScaledWidth() : 1f;
 		int sw = Math.max(1, Math.round(w * scale));
@@ -160,7 +170,7 @@ public final class TargetHudWidget {
 		try {
 			bridge.render(sw, sh, key, canvas -> {
 				canvas.scale(scale, scale);
-				draw(canvas, w, contentX, name, hpText, hd, ghost, frac, flash);
+				draw(canvas, w, contentX, cachedName, cachedHpText);
 			});
 			graphics.blit(RenderPipelines.GUI_TEXTURED, bridge.textureId(), drawX, drawY, 0.0F, 0.0F,
 					w, H, sw, sh, sw, sh, (alpha << 24) | 0xFFFFFF);
@@ -168,8 +178,29 @@ public final class TargetHudWidget {
 			return;
 		}
 
-		int shakeX = Math.round((float) Math.sin(clock * 45f) * flash * 2.5f);
-		int shakeY = Math.round((float) Math.sin(clock * 53f) * flash * 1.6f);
+		// Bar: track, then the white damage residue, then the health. The fill colour follows the
+		// displayed value, so it slides from green to red with the bar instead of snapping.
+		int barX = drawX + contentX;
+		int barY = drawY + 24;
+		int barW = w - contentX - 12;
+		int barH = 7;
+		Sdf.roundRect(graphics, barX, barY, barW, barH, 3, withAlpha(0x55000000, alpha));
+		if (ghost > hd + 0.001f) {
+			Sdf.roundRect(graphics, barX, barY, Math.max(3, Math.round(barW * ghost)), barH, 3,
+					withAlpha(0xAAFFFFFF, alpha));
+		}
+		if (hd > 0.004f) {
+			Sdf.roundRect(graphics, barX, barY, Math.max(3, Math.round(barW * hd)), barH, 3,
+					withAlpha(lerp(0xFFE53935, 0xFF6FBF59, hd), alpha));
+		}
+		if (flash > 0.01f) {
+			Sdf.roundRect(graphics, drawX, drawY, w, H, 8,
+					withAlpha(0xFF3838, Math.round(alpha * flash * 0.28f)));
+		}
+
+		float shake = flash * flash;
+		int shakeX = Math.round((float) Math.sin(clock * 45f) * shake * 3f);
+		int shakeY = Math.round((float) Math.sin(clock * 53f) * shake * 1.8f);
 		int boxX = drawX + 12 + shakeX;
 		int boxY = drawY + (H - HEAD) / 2 + shakeY;
 		float shrink = 1f - flash * 0.22f;
@@ -186,7 +217,7 @@ public final class TargetHudWidget {
 			if (entity != null && entity.isAlive() && !entity.isRemoved() && appear > 0.35f) {
 				renderEntityHead(graphics, entity, boxX, boxY, shrink);
 				if (flash > 0.01f) {
-					graphics.fill(boxX, boxY, boxX + HEAD, boxY + HEAD, (Math.round(flash * 110f) << 24) | 0xFF3838);
+					graphics.fill(boxX, boxY, boxX + HEAD, boxY + HEAD, withAlpha(0xFF3838, Math.round(alpha * flash * 0.43f)));
 				}
 			}
 		}
@@ -235,7 +266,7 @@ public final class TargetHudWidget {
 		return chatOpen ? mc.player : null;
 	}
 
-	private static void draw(Canvas canvas, int w, int contentX, String name, String hpText, float healthFrac, float ghostFrac, float realFrac, float flash) {
+	private static void draw(Canvas canvas, int w, int contentX, String name, String hpText) {
 		try (Paint bg = new Paint()) {
 			bg.setShader(Shader.makeLinearGradient(0, 0, 0, H, new int[] {0xE01D1D24, 0xE013131A}));
 			canvas.drawRRect(RRect.makeXYWH(0, 0, w, H, 8), bg);
@@ -247,34 +278,30 @@ public final class TargetHudWidget {
 			canvas.drawString(trim(font, name, w - contentX - 8), contentX, 18, font, paint);
 		}
 
-		int barX = contentX;
-		int barY = 24;
-		int barW = w - contentX - 12;
-		int barH = 7;
-		try (Paint paint = new Paint()) {
-			paint.setColor(0x55000000);
-			canvas.drawRRect(RRect.makeXYWH(barX, barY, barW, barH, 3), paint);
-			// damage ghost — white residue trailing the lost health
-			if (ghostFrac > healthFrac + 0.001f) {
-				paint.setColor(0xAAFFFFFF);
-				canvas.drawRRect(RRect.makeXYWH(barX, barY, Math.max(3f, barW * ghostFrac), barH, 3), paint);
-			}
-			paint.setColor(lerp(0xFFE53935, 0xFF6FBF59, realFrac));
-			canvas.drawRRect(RRect.makeXYWH(barX, barY, Math.max(3f, barW * healthFrac), barH, 3), paint);
-		}
-
 		try (Font small = new Font(Skia.harmony(), 9f); Paint paint = new Paint()) {
 			paint.setAntiAlias(true);
 			paint.setColor(0xFF9A9AA2);
-			canvas.drawString(hpText, barX, barY + barH + 11, small, paint);
+			canvas.drawString(hpText, contentX, 42, small, paint);
 		}
+	}
 
-		if (flash > 0.01f) {
-			try (Paint red = new Paint()) {
-				red.setColor((Math.round(flash * 70f) << 24) | 0xFF3838);
-				canvas.drawRRect(RRect.makeXYWH(0, 0, w, H, 8), red);
-			}
-		}
+	// Exponential approach: frame-rate independent, unlike a naive lerp with a dt factor.
+	private static float approach(float current, float target, float rate, float dt) {
+		return current + (target - current) * (1f - (float) Math.exp(-rate * dt));
+	}
+
+	private static float easeOut(float t) {
+		float u = 1f - clamp01(t);
+		return 1f - u * u * u;
+	}
+
+	private static float clamp01(float v) {
+		return Math.max(0f, Math.min(1f, v));
+	}
+
+	// Keeps the colour, replaces its alpha (0..255).
+	private static int withAlpha(int argb, int alpha) {
+		return (Math.max(0, Math.min(255, alpha)) << 24) | (argb & 0xFFFFFF);
 	}
 
 	private static String trim(Font font, String s, float maxWidth) {

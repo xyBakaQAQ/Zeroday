@@ -23,6 +23,7 @@
 		"ItemInHandRendererMixin",
 		"JoinMultiplayerScreenMixin",
 		"KeyboardHandlerMixin",
+		"LanguageSelectScreenMixin",
 		"LevelLoadingScreenMixin",
 		"LevelMixin",
 		"LightmapRenderStateExtractorMixin",
